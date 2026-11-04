@@ -96,7 +96,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
 <div class="wrap">
 <div class="topbar">
   <div class="brand-icon">♠</div>
-  <div><div class="brand-title" id="brand-title">MBR $0.25 Analyzer</div><div class="brand-sub">GGPoker · Hand History + Tournament Results · AI Trainer</div></div>
+  <div><div class="brand-title" id="brand-title">MBR $0.25 Analyzer</div><div class="brand-sub">GGPoker · Hand History + Tournament Results</div></div>
   <div class="nav">
     <button class="ntab" onclick="switchMain(&#39;hh&#39;,this)">Hand History</button>
     <button class="ntab on" onclick="switchMain(&#39;res&#39;,this)">Tournament Results</button>
@@ -156,7 +156,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
       <button class="st" onclick="hhTab(&#39;cards&#39;,this)">Top hands</button>
       <button class="st" onclick="hhTab(&#39;weak&#39;,this)">Leaks</button>
       <button class="st" onclick="hhTab(&#39;ranges&#39;,this)">📊 Ranges</button>
-      <button class="st" onclick="hhTab(&#39;ai&#39;,this)">AI Trainer ↗</button>
+      <button class="st" onclick="hhTab(&#39;ai&#39;,this)">🧮 Рішення</button>
     </div>
     <div id="hhT-ov"><div class="card"><div class="card-hdr">Overall stats</div><div id="hh-ov-c"></div></div></div>
     <div id="hhT-rush" style="display:none"><div class="card"><div class="card-hdr">⚡ Rush Stage</div><div id="hh-rush-c"></div></div></div>
@@ -215,25 +215,6 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
         <button class="btn btn-primary" onclick="runDecisionReview()">▶ Аналізувати вибрані місяці (<span id="hh-dec-cnt">0</span> роздач)</button>
         <div id="hh-dec-r" style="margin-top:.875rem"></div>
       </div>
-      <div class="card">
-        <div class="card-hdr">🤖 AI Trainer</div>
-        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Rush Stage (5-max) · Final Table (9-max Bounty) · ICM · Push/fold</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem">
-          <button class="btn" onclick="hhAsk(&#39;Rush Stage: VPIP, PFR, 3bet, CBet. What to improve?&#39;)">Rush ↗</button>
-          <button class="btn" onclick="hhAsk(&#39;Final Table ICM: push/fold, 3bet, Mystery Bounty aggression.&#39;)">Final ↗</button>
-          <button class="btn" onclick="hhAsk(&#39;Push/fold: when is Hero correct/incorrect to go all-in under 15bb?&#39;)">Push/fold ↗</button>
-          <button class="btn" onclick="hhAsk(&#39;Top 3 priorities to improve win rate in MBR $1.&#39;)">Plan ↗</button>
-        </div>
-        <div style="display:flex;gap:7px"><textarea id="hh-q" style="min-height:44px;flex:1" placeholder="Custom question..."></textarea><button class="btn btn-primary" style="align-self:flex-end" onclick="hhAskCustom()">→</button></div>
-        <div id="hh-ai-r" style="margin-top:.875rem"></div>
-      </div>
-      <div class="card" id="hh-hist-card" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem">
-          <div class="card-hdr" style="margin:0">History</div>
-          <button class="btn btn-danger" style="font-size:11px;padding:.25rem .6rem" onclick="clearHist(&#39;hh&#39;)">Clear</button>
-        </div>
-        <div id="hh-hist-list"></div>
-      </div>
     </div>
   </div>
 </div>
@@ -283,7 +264,6 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
       <button class="st" onclick="resTab(&#39;list&#39;,this)">List</button>
       <button class="st" onclick="resTab(&#39;roi&#39;,this)">ROI &amp; Profit</button>
       <button class="st" onclick="resTab(&#39;chart&#39;,this)">📈 Chart</button>
-      <button class="st" onclick="resTab(&#39;ai&#39;,this)">AI ↗</button>
     </div>
     <div id="rT-ov" style="display: none;"><div class="card"><div class="card-hdr">Overall stats MBR $1</div><div id="res-ov-c"></div></div></div>
     <div id="rT-ft" style="display:none"><div class="card"><div class="card-hdr">🏆 Final Table</div><div id="res-ft-c"></div></div></div>
@@ -319,27 +299,6 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
           <div class="card-hdr" style="margin:0">📈 Place Distribution</div>
         </div>
         <div style="position:relative;width:100%;height:260px"><canvas id="chart-place-canvas" width="1654" height="520" style="display: block; box-sizing: border-box; height: 260px; width: 827px;"></canvas></div>
-      </div>
-    </div>
-    <div id="rT-ai" style="display:none">
-      <div class="card">
-        <div class="card-hdr">🤖 AI analysis</div>
-        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">AI considers: fixed 4/3/2$, avg bounty $0.945, exp ITM 16.7%, exp FT 50%.</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem">
-          <button class="btn" onclick="resAsk(&#39;Analyze ROI, ITM%, FT rate vs expected.&#39;)">ROI ↗</button>
-          <button class="btn" onclick="resAsk(&#39;FT conversion and bounty EV. Compare with norm.&#39;)">FT ↗</button>
-          <button class="btn" onclick="resAsk(&#39;Variance and sample size. Is data sufficient?&#39;)">Variance ↗</button>
-          <button class="btn" onclick="resAsk(&#39;Concrete plan to increase profit in MBR $1.&#39;)">Plan ↗</button>
-        </div>
-        <div style="display:flex;gap:7px"><textarea id="res-q" style="min-height:44px;flex:1" placeholder="Custom question..."></textarea><button class="btn btn-primary" style="align-self:flex-end" onclick="resAskCustom()">→</button></div>
-        <div id="res-ai-r" style="margin-top:.875rem"></div>
-      </div>
-      <div class="card" id="res-hist-card" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem">
-          <div class="card-hdr" style="margin:0">History</div>
-          <button class="btn btn-danger" style="font-size:11px;padding:.25rem .6rem" onclick="clearHist(&#39;res&#39;)">Clear</button>
-        </div>
-        <div id="res-hist-list"></div>
       </div>
     </div>
   </div>
@@ -1384,7 +1343,6 @@ function showHand(id) {
   if(h.knockout) html+=pill("p-green","KNOCKOUT &#128176;");
   html+=pill(h.won?"p-green":"p-red",h.won?"+"+h.wonBB+"bb":"lost");
   html+="</div><pre style=\"background:#f8f8f8;padding:.875rem;border-radius:8px;border:0.5px solid #e0e0e0;max-height:180px;overflow-y:auto;color:#666\">"+escH(h.raw.trim())+"</pre>";
-  html+="<div style=\"margin-top:.875rem\"><button class=\"btn\" onclick=\"analyzeHand('"+id+"')\">&#10024; AI analysis &#8599;</button></div>";
   html+="<div id=\"oai-"+sid+"\" style=\"margin-top:.75rem\"></div>";
   $e("hh-hdi").innerHTML=html;
   sec.scrollIntoView({behavior:"smooth",block:"nearest"});
