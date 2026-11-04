@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>MBR Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f4f5f0;color:#1a1a1a;font-family:system-ui,sans-serif;font-size:14px;line-height:1.6}
+.wrap{max-width:900px;margin:0 auto;padding:1.5rem 1rem 4rem}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:0.5px solid #e0e0e0}
+.brand-icon{width:40px;height:40px;background:#E6F1FB;border:0.5px solid #B5D4F4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:#185FA5}
+.brand-title{font-size:16px;font-weight:500}.brand-sub{font-size:12px;color:#666;margin-top:1px}
+.nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.ntab{padding:.4rem .9rem;font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid #ccc;background:#fff;color:#666;border-radius:20px;transition:all .15s;font-family:inherit}
+.ntab:hover{color:#1a1a1a;background:#f0f0f0}.ntab.on{background:#185FA5;color:#fff;border-color:#185FA5}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;margin-bottom:1.5rem}
+.ic{background:#fff;border:0.5px solid #e0e0e0;border-radius:8px;padding:.55rem .875rem}
+.ic-l{font-size:10px;color:#999;font-weight:500;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}.ic-v{font-size:13px;font-weight:500}
+.card{background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1.25rem;margin-bottom:.875rem}
+.card-hdr{font-size:11px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;display:flex;align-items:center;gap:7px}
+.drop{border:1.5px dashed #ccc;border-radius:12px;padding:2.25rem 1.5rem;text-align:center;cursor:pointer;position:relative;background:#f8f8f8;transition:all .18s}
+.drop:hover,.drop.over{border-color:#185FA5;background:#E6F1FB}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop h3{font-size:15px;font-weight:500;margin-bottom:.3rem}.drop p{font-size:13px;color:#666}
+.fmts{display:flex;gap:5px;justify-content:center;margin-top:.55rem;flex-wrap:wrap}
+.fmt{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;font-family:monospace;background:#f4f5f0;color:#666;border:0.5px solid #ccc}
+.pw{margin:.6rem 0;display:none}
+.pt{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:.3rem;font-family:monospace}
+.pb{height:3px;background:#f4f5f0;border-radius:2px;overflow:hidden}
+.pf{height:100%;background:#185FA5;border-radius:2px;transition:width .1s;width:0}
+.plog{margin-top:.35rem;font-size:10px;color:#999;font-family:monospace;max-height:40px;overflow-y:auto}
+.chips-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:.5rem}
+.chip{padding:2px 8px;border-radius:4px;font-size:11px;font-family:monospace;border:0.5px solid #e0e0e0;background:#f8f8f8;color:#666}
+.chip.ok{color:#0F6E56;background:#EAF3DE;border-color:#C0DD97}.chip.err{color:#A32D2D;background:#FCEBEB;border-color:#F7C1C1}
+.alert{padding:.65rem .875rem;border-radius:8px;font-size:13px;margin-bottom:.875rem;line-height:1.55;border:0.5px solid}
+.a-info{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}.a-err{background:#FCEBEB;color:#791F1F;border-color:#F7C1C1}
+.a-amber{background:#FAEEDA;color:#633806;border-color:#FAC775}.a-ok{background:#EAF3DE;color:#27500A;border-color:#C0DD97}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.45rem .9rem;border-radius:8px;font-size:13px;font-weight:500;border:0.5px solid #ccc;background:#fff;color:#666;transition:all .15s;white-space:nowrap;cursor:pointer;font-family:inherit}
+.btn:hover{background:#f0f0f0;color:#1a1a1a}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:#185FA5;color:#fff;border-color:#185FA5}.btn-primary:hover{background:#0C447C;color:#fff}
+.btn-ok{background:#EAF3DE;color:#27500A;border-color:#C0DD97}.btn-danger{background:#FCEBEB;color:#791F1F;border-color:#F7C1C1}
+.brow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:.875rem}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:8px;margin-bottom:1.25rem}
+.sc{background:#fff;border:0.5px solid #e0e0e0;border-radius:8px;padding:.875rem 1rem}
+.sc-l{font-size:10px;color:#666;font-weight:500;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em}
+.sc-v{font-size:21px;font-weight:500;line-height:1}.sc-s{font-size:11px;color:#999;margin-top:.25rem;font-family:monospace}
+.stabs{display:flex;gap:4px;margin-bottom:1rem;flex-wrap:wrap;border-bottom:0.5px solid #e0e0e0;padding-bottom:.625rem}
+.st{padding:.3rem .75rem;font-size:12px;font-weight:500;border-radius:20px;cursor:pointer;border:0.5px solid transparent;background:transparent;color:#666;transition:all .15s;font-family:inherit}
+.st.on{background:#185FA5;color:#fff}.st:hover:not(.on){background:#f0f0f0;color:#1a1a1a;border-color:#ccc}
+.hlist{display:flex;flex-direction:column;gap:4px;max-height:400px;overflow-y:auto;padding-right:2px}
+.hi{padding:.55rem .875rem;border:0.5px solid #e0e0e0;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;transition:all .12s}
+.hi:hover{border-color:#ccc;background:#f8f8f8}
+.hi-name{font-size:13px;font-weight:500}.hi-meta{font-size:11px;color:#666;font-family:monospace;margin-top:1px}
+.hw{color:#0F6E56;font-weight:500}.hl{color:#999}
+.br{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bl{width:120px;font-size:12px;color:#666;flex-shrink:0;font-family:monospace}
+.bt{flex:1;height:5px;background:#f4f5f0;border-radius:3px;overflow:hidden;border:0.5px solid #e0e0e0}
+.bf{height:100%;border-radius:3px;transition:width .4s}
+.bv{width:44px;text-align:right;font-size:12px;font-weight:500;font-family:monospace}.be{width:52px;text-align:right;font-size:11px;color:#666;font-family:monospace}
+.pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:500}
+.p-blue{background:#E6F1FB;color:#0C447C;border:0.5px solid #B5D4F4}.p-green{background:#EAF3DE;color:#27500A;border:0.5px solid #C0DD97}
+.p-red{background:#FCEBEB;color:#791F1F;border:0.5px solid #F7C1C1}.p-amber{background:#FAEEDA;color:#633806;border:0.5px solid #FAC775}
+.p-gray{background:#f0f0f0;color:#666;border:0.5px solid #ccc}
+.rush{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:500;background:#E6F1FB;color:#185FA5;border:0.5px solid #B5D4F4}
+.final{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:500;background:#FAEEDA;color:#633806;border:0.5px solid #FAC775}
+.div{height:0.5px;background:#e0e0e0;margin:.875rem 0}
+.aio{font-size:14px;line-height:1.75}.aio h3{font-size:12px;font-weight:500;color:#185FA5;margin:1rem 0 .3rem;text-transform:uppercase;letter-spacing:.04em}
+.aio ul{margin-left:1.15rem;margin-bottom:.65rem}.aio li{margin-bottom:.3rem;color:#666}.aio strong{font-weight:500}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:580px){.two-col{grid-template-columns:1fr}}
+.sr{display:flex;align-items:center;justify-content:space-between;padding:.45rem 0;border-bottom:0.5px solid #e0e0e0}
+.sr:last-child{border-bottom:none}.sr-l{font-size:13px;color:#666}.sr-v{font-size:13px;font-weight:500}
+.sec-l{font-size:10px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.ti{padding:.6rem .9rem;border:0.5px solid #e0e0e0;border-radius:8px;margin-bottom:4px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ti.itm{border-left:2px solid #185FA5}.ti.ft{border-left:2px solid #639922}
+.mchk{display:inline-flex;align-items:center;gap:5px;padding:.3rem .75rem;border:0.5px solid #ccc;border-radius:8px;cursor:pointer;background:#fff;font-size:12px;font-weight:500;color:#666;user-select:none;transition:all .12s}
+.mchk:hover{background:#f0f0f0}.mchk.on{background:#E6F1FB;border-color:#B5D4F4;color:#0C447C}
+.month-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.875rem}
+.pages{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:.75rem;flex-wrap:wrap}
+.pg-btn{padding:.3rem .65rem;border:0.5px solid #ccc;border-radius:6px;font-size:12px;cursor:pointer;background:#fff;color:#666;font-family:inherit;transition:all .12s}
+.pg-btn:hover{background:#f0f0f0}.pg-btn.on{background:#185FA5;color:#fff;border-color:#185FA5}
+.pg-info{font-size:12px;color:#666;font-family:monospace}
+.btable{width:100%;border-collapse:collapse;font-size:12px}
+.btable th{text-align:left;padding:.4rem .6rem;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:#666;border-bottom:0.5px solid #e0e0e0}
+.btable td{padding:.45rem .6rem;border-bottom:0.5px solid #e0e0e0;font-family:monospace}
+.btable tr:last-child td{border-bottom:none}
+.c-blue{color:#185FA5}.c-green{color:#0F6E56}.c-red{color:#A32D2D}.c-amber{color:#854F0B}
+select{background:#fff;color:#1a1a1a;border:0.5px solid #ccc;border-radius:8px;padding:.3rem .65rem;font-size:12px;font-family:inherit;cursor:pointer}
+textarea{background:#fff;color:#1a1a1a;border:0.5px solid #ccc;border-radius:8px;padding:.6rem .75rem;font-size:13px;font-family:inherit;resize:vertical;width:100%}
+textarea:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 2px #E6F1FB}
+pre{font-family:monospace!important;font-size:12px;line-height:1.55}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .55s linear infinite;vertical-align:-2px;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topbar">
+  <div class="brand-icon">♠</div>
+  <div><div class="brand-title" id="brand-title">MBR $0.25 Analyzer</div><div class="brand-sub">GGPoker · Hand History + Tournament Results · AI Trainer</div></div>
+  <div class="nav">
+    <button class="ntab" onclick="switchMain(&#39;hh&#39;,this)">Hand History</button>
+    <button class="ntab on" onclick="switchMain(&#39;res&#39;,this)">Tournament Results</button>
+  </div>
+</div>
+<div class="info-grid">
+  <div class="ic"><div class="ic-l">Format</div><div class="ic-v">18 players · 2 stages</div></div>
+  <div class="ic"><div class="ic-l">Buy-in</div><div class="ic-v" id="info-buyin">$0.25 (0.125+0.02+0.105)</div></div>
+  <div class="ic"><div class="ic-l">Rush Stage</div><div class="ic-v">5-max fast-fold</div></div>
+  <div class="ic"><div class="ic-l">Final Table</div><div class="ic-v">9-max Mystery Bounty</div></div>
+  <div class="ic"><div class="ic-l">Fixed prizes</div><div class="ic-v" id="info-fixed-prizes">1°$1 · 2°$0.75 · 3°$0.5</div></div>
+  <div class="ic"><div class="ic-l">Bounty Pool</div><div class="ic-v">18×$0.42 = $7.56</div></div>
+  <div class="ic"><div class="ic-l">Avg EV</div><div class="ic-v">~$0.945</div></div>
+  <div class="ic"><div class="ic-l">Action Race</div><div class="ic-v">$600/day</div></div>
+</div>
+
+<div id="M-hh" style="display: none;">
+  <div id="HH-up" style="display: block;">
+    <div class="alert a-info">Load <strong>.zip</strong> or <strong>.txt</strong> Hand History files from GGPoker MBR.</div>
+    <div class="drop" id="hh-drop"><input type="file" id="hh-inp" accept=".zip,.txt,.log" multiple="">
+      <div style="font-size:28px;margin-bottom:.5rem;color:#999">☁</div>
+      <h3>Drop or click to select</h3>
+      <p>GGPoker MBR Hand History · "Poker Hand #BR..."</p>
+      <div class="fmts"><span class="fmt">.zip</span><span class="fmt">.txt</span><span class="fmt">multiple</span></div>
+    </div>
+    <div class="pw" id="hh-pw" style="display: none;"><div class="pt"><span id="hh-pl"></span><span id="hh-pp"></span></div><div class="pb"><div class="pf" id="hh-pf" style="width: 0%;"></div></div><div class="plog" id="hh-log"></div></div>
+    <div class="chips-row" id="hh-chips"></div><div id="hh-err"></div>
+    <div class="brow">
+      <button class="btn btn-primary" id="hh-go" onclick="doHH()">⚡ Analyze</button>
+      <button class="btn" onclick="hhDemo()">▶ Demo</button>
+      <button class="btn btn-ok" id="hh-merge" onclick="mergeHH()" style="display: none;">↗ Merge</button>
+      <span id="hh-cnt" style="font-size:12px;color:#666;font-family:monospace"></span>
+    </div>
+  </div>
+  <div id="HH-res" style="display: none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:18px;font-weight:500" id="hh-rtitle"></div><div style="font-size:12px;color:#666;font-family:monospace;margin-top:2px" id="hh-rsub"></div></div>
+      <button class="btn" onclick="resetHH()">← Back</button>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:6px">
+        <div class="card-hdr" style="margin:0">📅 Filter by month <span id="hh-filter-cnt" style="font-weight:400;font-size:11px;margin-left:4px;color:#666"></span></div>
+        <div style="display:flex;gap:5px">
+          <button class="btn" style="font-size:11px;padding:.2rem .65rem" onclick="selectAllHHMonths(true)">All</button>
+          <button class="btn" style="font-size:11px;padding:.2rem .65rem" onclick="selectAllHHMonths(false)">None</button>
+        </div>
+      </div>
+      <div class="month-grid" id="hh-month-filter"></div>
+    </div>
+    <div class="sgrid" id="hh-sg"></div>
+    <div class="stabs" id="hh-stabs">
+      <button class="st on" onclick="hhTab(&#39;ov&#39;,this)">Overview</button>
+      <button class="st" onclick="hhTab(&#39;rush&#39;,this)">⚡ Rush</button>
+      <button class="st" onclick="hhTab(&#39;final&#39;,this)">🏆 Final</button>
+      <button class="st" onclick="hhTab(&#39;pos&#39;,this)">Position</button>
+      <button class="st" onclick="hhTab(&#39;hands&#39;,this)">Hands</button>
+      <button class="st" onclick="hhTab(&#39;cards&#39;,this)">Top hands</button>
+      <button class="st" onclick="hhTab(&#39;weak&#39;,this)">Leaks</button>
+      <button class="st" onclick="hhTab(&#39;ranges&#39;,this)">📊 Ranges</button>
+      <button class="st" onclick="hhTab(&#39;ai&#39;,this)">AI Trainer ↗</button>
+    </div>
+    <div id="hhT-ov"><div class="card"><div class="card-hdr">Overall stats</div><div id="hh-ov-c"></div></div></div>
+    <div id="hhT-rush" style="display:none"><div class="card"><div class="card-hdr">⚡ Rush Stage</div><div id="hh-rush-c"></div></div></div>
+    <div id="hhT-final" style="display:none"><div class="card"><div class="card-hdr">🏆 Final Table</div><div id="hh-final-c"></div></div></div>
+    <div id="hhT-pos" style="display:none"><div class="card"><div class="card-hdr">Position</div><div id="hh-pos-c"></div></div></div>
+    <div id="hhT-hands" style="display:none">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:6px">
+          <div class="card-hdr" style="margin:0">Hands <span id="hh-hcnt"></span></div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <select id="fR" onchange="renderHL(1)"><option value="all">All</option><option value="win">Won</option><option value="loss">Lost</option></select>
+            <select id="fS" onchange="renderHL(1)"><option value="all">Rush+Final</option><option value="rush">Rush</option><option value="final">Final</option></select>
+            <select id="fP" onchange="renderHL(1)"><option value="all">All positions</option><option value="BTN">BTN</option><option value="SB">SB</option><option value="BB">BB</option><option value="HJ">HJ</option><option value="UTG">UTG</option></select>
+          </div>
+        </div>
+        <div class="hlist" id="hh-hl"></div>
+        <div class="pages" id="hh-pages"></div>
+      </div>
+      <div class="card" id="hh-hd" style="display:none"><div class="card-hdr">Hand detail</div><div id="hh-hdi"></div></div>
+    </div>
+    <div id="hhT-cards" style="display:none"><div class="card"><div class="card-hdr">🃏 Top hands</div><div id="hh-cards-c"></div></div></div>
+    <div id="hhT-weak" style="display:none"><div class="card"><div class="card-hdr">⚠️ Leaks</div><div id="hh-weak-c"></div></div></div>
+    <div id="hhT-ranges" style="display:none">
+      <div class="card">
+        <div class="card-hdr">📊 Рейндж-чарти (формула Чена — ті самі пороги, що в «Аналізі рішень»)</div>
+        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Скрізь, крім режиму «Пуш/фолд», мається на увазі глибокий стек (&gt;15bb).</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem" id="rc-modes">
+          <button class="btn btn-primary" onclick="setRangeMode('open',this)">Відкриття</button>
+          <button class="btn" onclick="setRangeMode('vs_open',this)">Проти опену</button>
+          <button class="btn" onclick="setRangeMode('vs_3bet',this)">Проти 3-бету</button>
+          <button class="btn" onclick="setRangeMode('pushfold',this)">Пуш/фолд</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem" id="rc-src">
+          <button class="btn btn-primary" onclick="setRangeSrc('theory',this)">📚 Теорія</button>
+          <button class="btn" onclick="setRangeSrc('mine',this)">📊 Мої дані</button>
+        </div>
+        <div class="alert a-info" style="font-size:11px;margin-bottom:.75rem">«Мої дані» — не справжня еквіті (для неї потрібен окремий солвер/симуляція проти діапазону), а реальний результат ваших роздач у цьому контексті: скільки разів грали, % виграних, чистий bb.</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
+          <div id="rc-pos-wrap"><label style="font-size:11px;color:#666;display:block;margin-bottom:2px">Позиція</label>
+            <select id="rc-pos" onchange="renderRangeChart()">
+              <option value="UTG">UTG</option><option value="MP">MP</option><option value="HJ">HJ</option><option value="CO">CO</option><option value="BTN" selected>BTN</option><option value="SB">SB</option><option value="BB">BB</option>
+            </select>
+          </div>
+          <div id="rc-stack-wrap" style="display:none"><label style="font-size:11px;color:#666;display:block;margin-bottom:2px">Стек (bb)</label>
+            <input type="number" id="rc-stack" value="10" min="1" max="15" step="1" style="width:70px" oninput="renderRangeChart()">
+          </div>
+          <div id="rc-legend" style="font-size:12px;color:#666"></div>
+        </div>
+        <div id="rc-grid" style="display:grid;grid-template-columns:repeat(13,1fr);gap:2px;max-width:640px;font-family:monospace"></div>
+      </div>
+    </div>
+    <div id="hhT-ai" style="display:none">
+      <div class="card">
+        <div class="card-hdr">🧮 Аналіз рішень (за правилами, миттєво, без AI)</div>
+        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Оцінює кожну роздачу, де відомі карти Hero: відкриття, захист проти опену/3-бету, пуш/фолд на короткому стеку. Формула Чена + рейнджі по позиції/глибині стека. Постфлоп — окремо у вкладці «Leaks».</div>
+        <button class="btn btn-primary" onclick="runDecisionReview()">▶ Аналізувати вибрані місяці (<span id="hh-dec-cnt">0</span> роздач)</button>
+        <div id="hh-dec-r" style="margin-top:.875rem"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">🤖 AI Trainer</div>
+        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Rush Stage (5-max) · Final Table (9-max Bounty) · ICM · Push/fold</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem">
+          <button class="btn" onclick="hhAsk(&#39;Rush Stage: VPIP, PFR, 3bet, CBet. What to improve?&#39;)">Rush ↗</button>
+          <button class="btn" onclick="hhAsk(&#39;Final Table ICM: push/fold, 3bet, Mystery Bounty aggression.&#39;)">Final ↗</button>
+          <button class="btn" onclick="hhAsk(&#39;Push/fold: when is Hero correct/incorrect to go all-in under 15bb?&#39;)">Push/fold ↗</button>
+          <button class="btn" onclick="hhAsk(&#39;Top 3 priorities to improve win rate in MBR $1.&#39;)">Plan ↗</button>
+        </div>
+        <div style="display:flex;gap:7px"><textarea id="hh-q" style="min-height:44px;flex:1" placeholder="Custom question..."></textarea><button class="btn btn-primary" style="align-self:flex-end" onclick="hhAskCustom()">→</button></div>
+        <div id="hh-ai-r" style="margin-top:.875rem"></div>
+      </div>
+      <div class="card" id="hh-hist-card" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem">
+          <div class="card-hdr" style="margin:0">History</div>
+          <button class="btn btn-danger" style="font-size:11px;padding:.25rem .6rem" onclick="clearHist(&#39;hh&#39;)">Clear</button>
+        </div>
+        <div id="hh-hist-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="M-res" style="display: block;">
+  <div id="R-up" style="display: block;">
+    <div class="alert a-info">Load new files - they are <strong>added</strong> without duplicates.</div>
+    <div id="res-stored-notice" class="alert a-ok" style="display: none; align-items: center;">✓ <span id="res-stored-txt"></span><button class="btn btn-danger" style="margin-left:auto;font-size:11px;padding:.2rem .6rem" onclick="clearStored()">Clear</button></div>
+    <div class="drop" id="res-drop"><input type="file" id="res-inp" accept=".zip,.txt" multiple="">
+      <div style="font-size:28px;margin-bottom:.5rem;color:#999">🏆</div>
+      <h3>Tournament Summary files GGPoker MBR</h3>
+      <p>"Tournament #...", "Buy-in: $...", "5th : Hero, $1.25"</p>
+      <div class="fmts"><span class="fmt">.zip</span><span class="fmt">.txt</span><span class="fmt">multiple</span></div>
+    </div>
+    <div class="pw" id="res-pw" style="display: none;"><div class="pt"><span id="res-pl"></span><span id="res-pp"></span></div><div class="pb"><div class="pf" id="res-pf" style="width: 0%;"></div></div><div class="plog" id="res-log"></div></div>
+    <div class="chips-row" id="res-chips"></div><div id="res-err"></div>
+    <div class="brow">
+      <button class="btn btn-primary" id="res-go" onclick="doRes()">📊 Show stats</button>
+      <button class="btn" onclick="resDemo()">▶ Demo</button>
+      <span id="res-cnt" style="font-size:12px;color:#666;font-family:monospace"></span>
+    </div>
+  </div>
+  <div id="R-res" style="display: none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:18px;font-weight:500" id="res-rtitle"></div><div style="font-size:12px;color:#666;font-family:monospace;margin-top:2px" id="res-rsub"></div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn" onclick="showAddMore()">+ Add</button>
+        <button class="btn" onclick="resetRes()">← Back</button>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:6px">
+        <div class="card-hdr" style="margin:0">📅 Filter by month <span id="res-filter-cnt"></span></div>
+        <div style="display:flex;gap:5px">
+          <button class="btn" style="font-size:11px;padding:.2rem .65rem" onclick="selectAllMonths(true)">All</button>
+          <button class="btn" style="font-size:11px;padding:.2rem .65rem" onclick="selectAllMonths(false)">None</button>
+        </div>
+      </div>
+      <div class="month-grid" id="month-filter"></div>
+    </div>
+    <div class="sgrid" id="res-sg"></div>
+    <div class="alert a-amber" style="font-size:12px" id="res-prize-alert"><strong>MBR $0.25:</strong> &nbsp;<span class="pill p-blue">1° $1.00</span> <span class="pill p-gray">2° $0.75</span> <span class="pill p-gray">3° $0.50</span> fixed &nbsp;+&nbsp; Mystery Bounty ($$0.06–$5,000). Places 4–9 = bounty only.</div>
+    <div class="stabs" id="res-stabs">
+      <button class="st" onclick="resTab(&#39;ov&#39;,this)">Overview</button>
+      <button class="st" onclick="resTab(&#39;ft&#39;,this)">🏆 Final Table</button>
+      <button class="st on" onclick="resTab(&#39;bounty&#39;,this)">💰 Bounty</button>
+      <button class="st" onclick="resTab(&#39;list&#39;,this)">List</button>
+      <button class="st" onclick="resTab(&#39;roi&#39;,this)">ROI &amp; Profit</button>
+      <button class="st" onclick="resTab(&#39;chart&#39;,this)">📈 Chart</button>
+      <button class="st" onclick="resTab(&#39;ai&#39;,this)">AI ↗</button>
+    </div>
+    <div id="rT-ov" style="display: none;"><div class="card"><div class="card-hdr">Overall stats MBR $1</div><div id="res-ov-c"></div></div></div>
+    <div id="rT-ft" style="display:none"><div class="card"><div class="card-hdr">🏆 Final Table</div><div id="res-ft-c"></div></div></div>
+    <div id="rT-bounty" style="display: block;"><div class="card"><div class="card-hdr">💰 Mystery Bounty analysis</div><div id="res-bounty-c"></div></div></div>
+    <div id="rT-list" style="display:none">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:6px">
+          <div class="card-hdr" style="margin:0">List <span id="res-tcnt"></span></div>
+          <div style="display:flex;gap:5px">
+            <select id="rfR" onchange="renderRL()"><option value="all">All</option><option value="itm">ITM</option><option value="ft">FT</option><option value="miss">Rush bust</option></select>
+            <select id="rfS" onchange="renderRL()"><option value="date">Date</option><option value="place">Place</option><option value="prize">Prize</option></select>
+          </div>
+        </div>
+        <div class="hlist" id="res-tl"></div>
+      </div>
+    </div>
+    <div id="rT-roi" style="display: none;"><div class="card"><div class="card-hdr">ROI &amp; Profit</div><div id="res-roi-c"></div></div></div>
+    <div id="rT-chart" style="display: none;">
+      <div class="card" style="margin-bottom:.875rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px">
+          <div class="card-hdr" style="margin:0">📈 Cumulative Profit</div>
+        </div>
+        <div style="position:relative;width:100%;height:300px"><canvas id="chart-cum-canvas" width="1654" height="600" style="display: block; box-sizing: border-box; height: 300px; width: 827px;"></canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:.875rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px">
+          <div class="card-hdr" style="margin:0">📈 ROI by Month</div>
+        </div>
+        <div style="position:relative;width:100%;height:260px"><canvas id="chart-roi-canvas" width="1654" height="520" style="display: block; box-sizing: border-box; height: 260px; width: 827px;"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px">
+          <div class="card-hdr" style="margin:0">📈 Place Distribution</div>
+        </div>
+        <div style="position:relative;width:100%;height:260px"><canvas id="chart-place-canvas" width="1654" height="520" style="display: block; box-sizing: border-box; height: 260px; width: 827px;"></canvas></div>
+      </div>
+    </div>
+    <div id="rT-ai" style="display:none">
+      <div class="card">
+        <div class="card-hdr">🤖 AI analysis</div>
+        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">AI considers: fixed 4/3/2$, avg bounty $0.945, exp ITM 16.7%, exp FT 50%.</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem">
+          <button class="btn" onclick="resAsk(&#39;Analyze ROI, ITM%, FT rate vs expected.&#39;)">ROI ↗</button>
+          <button class="btn" onclick="resAsk(&#39;FT conversion and bounty EV. Compare with norm.&#39;)">FT ↗</button>
+          <button class="btn" onclick="resAsk(&#39;Variance and sample size. Is data sufficient?&#39;)">Variance ↗</button>
+          <button class="btn" onclick="resAsk(&#39;Concrete plan to increase profit in MBR $1.&#39;)">Plan ↗</button>
+        </div>
+        <div style="display:flex;gap:7px"><textarea id="res-q" style="min-height:44px;flex:1" placeholder="Custom question..."></textarea><button class="btn btn-primary" style="align-self:flex-end" onclick="resAskCustom()">→</button></div>
+        <div id="res-ai-r" style="margin-top:.875rem"></div>
+      </div>
+      <div class="card" id="res-hist-card" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem">
+          <div class="card-hdr" style="margin:0">History</div>
+          <button class="btn btn-danger" style="font-size:11px;padding:.25rem .6rem" onclick="clearHist(&#39;res&#39;)">Clear</button>
+        </div>
+        <div id="res-hist-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script src="lib/jszip.min.js"></script>
+<script src="lib/chart.umd.min.js"></script>
+<script>
+// ============================================================
+// SECTION: CONFIG
+// ============================================================
+var CONFIGS = {
+  "1.00": {
+    label: "MBR $1",
+    buyin: 0.5, rake: 0.08, bountyPool: 0.42,
+    fixedPrizes: {1:4.00, 2:3.00, 3:2.00},
+    avgBountyEV: 0.945,
+    bountyDist: [
+      {val:0.25,  prob:0.2839108, label:"$0.25"},
+      {val:0.50,  prob:0.3370446, label:"$0.50"},
+      {val:0.75,  prob:0.2300000, label:"$0.75"},
+      {val:1.00,  prob:0.0400000, label:"$1.00"},
+      {val:1.50,  prob:0.0380000, label:"$1.50"},
+      {val:2.00,  prob:0.0360000, label:"$2.00"},
+      {val:10.00, prob:0.0350000, label:"$10"},
+      {val:100,   prob:0.0000400, label:"$100"},
+      {val:1000,  prob:0.0000040, label:"$1,000"},
+      {val:10000, prob:0.0000006, label:"$10,000"}
+    ],
+    tiers: [25,50,75,100,150,200,1000,10000,100000,1000000]
+  },
+  "0.25": {
+    label: "MBR $0.25",
+    buyin: 0.125, rake: 0.02, bountyPool: 0.105,
+    fixedPrizes: {1:1.00, 2:0.75, 3:0.50},
+    avgBountyEV: 0.23625,
+    bountyDist: [
+      {val:0.06,  prob:0.2704892, label:"$0.06"},
+      {val:0.13,  prob:0.3504665, label:"$0.13"},
+      {val:0.18,  prob:0.2300000, label:"$0.18"},
+      {val:0.25,  prob:0.0400000, label:"$0.25"},
+      {val:0.37,  prob:0.0380000, label:"$0.37"},
+      {val:0.50,  prob:0.0360000, label:"$0.50"},
+      {val:2.50,  prob:0.0350000, label:"$2.50"},
+      {val:25,    prob:0.0000400, label:"$25"},
+      {val:250,   prob:0.0000040, label:"$250"},
+      {val:5000,  prob:0.0000003, label:"$5,000"}
+    ],
+    tiers: [6,13,18,25,37,50,250,2500,25000,500000]
+  }
+};
+var ACTIVE_CONFIG = "1.00";
+function cfg(){return CONFIGS[ACTIVE_CONFIG];}
+var FIXED_PRIZES = CONFIGS["1.00"].fixedPrizes;
+var AVG_BOUNTY_EV = CONFIGS["1.00"].avgBountyEV;
+var BOUNTY_DIST = CONFIGS["1.00"].bountyDist;
+var TIERS = CONFIGS["1.00"].tiers;
+function applyConfig(key){
+  ACTIVE_CONFIG=key;
+  var c=CONFIGS[key];
+  FIXED_PRIZES=c.fixedPrizes;
+  AVG_BOUNTY_EV=c.avgBountyEV;
+  BOUNTY_DIST=c.bountyDist;
+  TIERS=c.tiers;
+  document.getElementById("brand-title").textContent=c.label+" Analyzer";
+  updateConfigUI();
+}
+function updateConfigUI(){
+  var c=cfg();
+  var fp=c.fixedPrizes;
+  var fpEl=document.getElementById("info-fixed-prizes");
+  if(fpEl) fpEl.innerHTML="1&deg;$"+fp[1]+" &middot; 2&deg;$"+fp[2]+" &middot; 3&deg;$"+fp[3];
+  var maxB=c.bountyDist[c.bountyDist.length-1];
+  var minB=c.bountyDist[0];
+  var alertEl=document.getElementById("res-prize-alert");
+  if(alertEl) alertEl.innerHTML="<strong>"+c.label+":</strong> &nbsp;<span class=\"pill p-blue\">1&deg; $"+fp[1].toFixed(2)+"</span> <span class=\"pill p-gray\">2&deg; $"+fp[2].toFixed(2)+"</span> <span class=\"pill p-gray\">3&deg; $"+fp[3].toFixed(2)+"</span> fixed &nbsp;+&nbsp; Mystery Bounty ($"+minB.label+"&ndash;"+maxB.label+"). Places 4&ndash;9 = bounty only.";
+  var biEl=document.getElementById("info-buyin");
+  if(biEl) biEl.textContent="$"+(c.buyin+c.rake+c.bountyPool).toFixed(2)+" ("+c.buyin+"+"+c.rake+"+"+c.bountyPool+")";
+}
+var PER_PAGE = 50;
+
+// ============================================================
+// SECTION: STATE
+// ============================================================
+function autoDetectConfig(text){
+  var m=text.match(/Mystery Battle Royale \$([\.\d]+)/i);
+  if(!m) return;
+  var buyin=parseFloat(m[1]);
+  var key=buyin<=0.30?"0.25":"1.00";
+  if(key===ACTIVE_CONFIG) return;
+  applyConfig(key);
+  var sel=document.getElementById("buyin-sel");
+  if(sel) sel.value=key;
+}
+function onBuyinChange(val){
+  applyConfig(val);
+  var sel2=document.getElementById("buyin-sel2");
+  if(sel2) sel2.value=val;
+  // re-render if data loaded
+  if(allRT.length) refreshResStats();
+  if(HH.length) refreshHHStats();
+}
+var ftByTour = {};
+var HH = [], HHtext = "", HHtours = {}, HHraw = [], HHids = new Set();
+var allHHMonths = {}, allRT = [], activeMonths = {}, hhPage = 1;
+var histHH = [], histRES = [];
+
+// ============================================================
+// SECTION: UTILS
+// ============================================================
+function $e(id) { return document.getElementById(id); }
+function ch(s) { return parseInt((s||"0").replace(/,/g,""))||0; }
+function $d(s) { return parseFloat((s||"0").replace(/[$,]/g,""))||0; }
+function escH(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function sr(l,v) { return "<div class=\"sr\"><span class=\"sr-l\">"+l+"</span><span class=\"sr-v\">"+v+"</span></div>"; }
+function pill(cls,txt) { return "<span class=\"pill "+cls+"\">"+txt+"</span>"; }
+
+function setP(pre,pct,lbl,log) {
+  var pw=$e(pre+"-pw"); pw.style.display="block";
+  if(pct!==null){$e(pre+"-pf").style.width=Math.min(pct,100)+"%"; $e(pre+"-pp").textContent=Math.round(pct)+"%";}
+  if(lbl) $e(pre+"-pl").textContent=lbl;
+  if(log){var d=document.createElement("div");d.textContent=log;var el=$e(pre+"-log");el.appendChild(d);el.scrollTop=el.scrollHeight;}
+}
+function addChip(pre,txt,cls) {
+  var c=document.createElement("span");
+  c.className="chip"+(cls?" "+cls:""); c.textContent=txt;
+  $e(pre+"-chips").appendChild(c);
+}
+function showErr(pre,msg) { $e(pre+"-err").innerHTML="<div class=\"alert a-err\">"+msg+"</div>"; }
+function clearErr(pre) { $e(pre+"-err").innerHTML=""; }
+
+function getMonthKey(date) {
+  if(!date) return "unknown";
+  var d=new Date(date);
+  return d.getFullYear()+"-"+(d.getMonth()+1).toString().padStart(2,"0");
+}
+var MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function monthLabel(k) { var p=k.split("-"); return (MN[parseInt(p[1])-1]||p[1])+" "+p[0]; }
+
+function saveHist(key,q,ans) {
+  var arr=key==="hh"?histHH:histRES;
+  arr.unshift({q:q, ans:ans, time:new Date().toLocaleString()});
+  if(arr.length>15) arr.length=15;
+  renderHist(key);
+}
+function clearHist(pre) { if(pre==="hh") histHH=[]; else histRES=[]; renderHist(pre); }
+function renderHist(pre) {
+  var h=pre==="hh"?histHH:histRES;
+  var card=$e(pre+"-hist-card"), list=$e(pre+"-hist-list");
+  if(!h.length){card.style.display="none"; return;}
+  card.style.display="block";
+  var html="";
+  for(var i=0;i<h.length;i++){
+    var item=h[i];
+    html+="<div class=\"card\" style=\"margin-bottom:6px;padding:.75rem\">";
+    html+="<div style=\"font-size:13px;font-weight:500\">"+escH(item.q.substring(0,90))+"</div>";
+    html+="<div style=\"font-size:11px;color:#999;margin-top:2px\">"+item.time+"</div>";
+    html+="<button class=\"btn\" style=\"font-size:11px;padding:.2rem .6rem;margin-top:4px\" onclick=\"expandHist('"+pre+"',"+i+")\">&#8599;</button>";
+    html+="</div>";
+  }
+  list.innerHTML=html;
+}
+function expandHist(pre,i) {
+  var h=pre==="hh"?histHH:histRES;
+  if(!h[i]) return;
+  $e(pre+"-ai-r").innerHTML="<div class=\"aio\">"+h[i].ans+"</div>";
+}
+
+function switchMain(n,b) {
+  document.querySelectorAll(".ntab").forEach(function(t){t.classList.remove("on");});
+  b.classList.add("on");
+  $e("M-hh").style.display=n==="hh"?"block":"none";
+  $e("M-res").style.display=n==="res"?"block":"none";
+  if(n==="res") updateStoredNotice();
+}
+function showAddMore() { $e("R-up").style.display="block"; $e("R-res").style.display="none"; }
+function clearStored() { allRT=[]; activeMonths={}; $e("res-stored-notice").style.display="none"; resetRes(); }
+function updateStoredNotice() {
+  if(allRT.length>0){
+    $e("res-stored-notice").style.display="flex";
+    $e("res-stored-txt").textContent=allRT.length+" tournaments loaded";
+    $e("res-go").disabled=false;
+    $e("res-cnt").textContent=allRT.length+" tournaments";
+  } else {
+    $e("res-stored-notice").style.display="none";
+  }
+}
+
+// ============================================================
+// SECTION: FILE LOADING
+// ============================================================
+window.addEventListener("DOMContentLoaded", function(){
+  $e("hh-inp").addEventListener("change", function(e){if(e.target.files.length) loadFiles("hh",Array.from(e.target.files));});
+  $e("res-inp").addEventListener("change", function(e){if(e.target.files.length) loadFiles("res",Array.from(e.target.files));});
+  ["hh","res"].forEach(function(pre){
+    var dz=$e(pre+"-drop");
+    dz.addEventListener("dragover", function(e){e.preventDefault();dz.classList.add("over");});
+    dz.addEventListener("dragleave", function(){dz.classList.remove("over");});
+    dz.addEventListener("drop", function(e){e.preventDefault();dz.classList.remove("over");if(e.dataTransfer.files.length) loadFiles(pre,Array.from(e.dataTransfer.files));});
+  });
+});
+
+async function loadFiles(pre,files) {
+  $e(pre+"-chips").innerHTML=""; $e(pre+"-log").innerHTML="";
+  if(pre==="hh"){HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();}
+  clearErr(pre);
+  var txts=[];
+  for(var fi=0;fi<files.length;fi++){
+    var f=files[fi];
+    if(f.name.toLowerCase().endsWith(".zip")){
+      addChip(pre,f.name+" (zip)"); setP(pre,2,"Unzipping...",null);
+      try{
+        var zip=await JSZip.loadAsync(f);
+        var ents=Object.values(zip.files).filter(function(e){return !e.dir&&(e.name.endsWith(".txt")||e.name.endsWith(".log"));});
+        if(!ents.length){showErr(pre,"ZIP has no .txt files");return;}
+        var zi=0;
+        for(var ei=0;ei<ents.length;ei++){
+          var t=await ents[ei].async("string");
+          txts.push({name:ents[ei].name.split("/").pop(), text:t}); zi++;
+          if(zi%20===0||zi===ents.length) setP(pre,2+(zi/ents.length)*50,"ZIP: "+zi+"/"+ents.length,null);
+        }
+        addChip(pre,ents.length+" files","ok");
+      } catch(e){showErr(pre,"ZIP: "+e.message);return;}
+    } else {
+      try{var t=await f.text(); txts.push({name:f.name,text:t}); addChip(pre,f.name,"ok");}
+      catch(e){addChip(pre,"x "+f.name,"err");}
+    }
+  }
+  if(!txts.length){showErr(pre,"No files found");return;}
+  setP(pre,52,"Parsing...",null);
+  var done=0,found=0,skipped=0;
+  for(var ti=0;ti<txts.length;ti++){
+    var tf=txts[ti];
+    if(pre==="hh"){
+      if(!tf.text.includes("Poker Hand #")){skipped++;}
+      else{var before=HH.length; autoDetectConfig(tf.text); parseGG(tf.text,tf.name); found+=HH.length-before; HHraw.push(tf.text); if(HHtext.length<14000) HHtext+=tf.text.substring(0,4000)+"\n";}
+    } else {
+      if(tf.text.includes("Tournament #")&&tf.text.includes("Buy-in")){
+        var rt=parseRT(tf.text,tf.name);
+        if(rt){if(!allRT.find(function(x){return x.id===rt.id;})){allRT.push(rt);found++;}}
+      } else skipped++;
+    }
+    done++;
+    if(done%10===0||done===txts.length){
+      setP(pre,52+(done/txts.length)*45,"Parsing: "+done+"/"+txts.length,
+        done===txts.length?"Done! "+found+(skipped?" | Skipped: "+skipped:""):null);
+      await new Promise(function(r){setTimeout(r,0);});
+    }
+  }
+  if(pre==="hh"){
+    if(!HH.length){showErr("hh","No GGPoker MBR hands found."); $e("hh-go").disabled=true; return;}
+    $e("hh-cnt").textContent=HH.length+" hands";
+    $e("hh-go").disabled=false;
+    if(HHraw.length>1) $e("hh-merge").style.display="inline-flex";
+    clearErr("hh");
+  } else {
+    allRT.sort(function(a,b){return b.date-a.date;});
+    if(!allRT.length){showErr("res","No results found."); $e("res-go").disabled=true; return;}
+    $e("res-cnt").textContent=allRT.length+" tournaments";
+    $e("res-go").disabled=false; clearErr("res"); updateStoredNotice();
+  }
+}
+
+// ============================================================
+// SECTION: PARSER — HH
+// ============================================================
+function normalizeHand(cards) {
+  if(!cards) return "?";
+  var parts=cards.trim().split(/\s+/);
+  if(parts.length!==2) return cards;
+  var rankOrder="AKQJT98765432";
+  var r1=parts[0][0].toUpperCase(), r2=parts[1][0].toUpperCase();
+  if(r1==="1") r1="T"; if(r2==="1") r2="T";
+  var s1=parts[0].slice(-1).toLowerCase(), s2=parts[1].slice(-1).toLowerCase();
+  var suited=s1===s2;
+  var i1=rankOrder.indexOf(r1), i2=rankOrder.indexOf(r2);
+  if(i1>i2){var tmp=r1;r1=r2;r2=tmp;}
+  if(r1===r2) return r1+r2;
+  return r1+r2+(suited?"s":"o");
+}
+
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+function parseGG(text,fname) {
+  var blocks=text.split(/(?=Poker Hand #)/g).filter(function(b){return b.length>40;});
+  var tourId="", tourName="";
+  var tM=text.match(/Tournament #(\d+),\s*(.+?)\s+Hold'em/);
+  if(tM){tourId=tM[1]; tourName=tM[2].trim();}
+  if(!tourId) tourId=fname.replace(/\.[^.]+$/,"").substring(0,40);
+  if(!HHtours[tourId]) HHtours[tourId]={name:tourName||fname, n:0};
+
+  // FT стіл = стіл де є перша 9-max роздача у файлі
+  // Файл може містити кілька турнірів (мультитейблінг)
+  // Для кожного tourId запам'ятовуємо номер FT столу
+  for(var fi=0;fi<blocks.length;fi++){
+    var btM=blocks[fi].match(/Tournament #(\d+)/);
+    var tid=btM?btM[1]:tourId;
+    if(ftByTour[tid+"_tbl"]) continue;
+    var tblL=(blocks[fi].split("\n")[1])||"";
+    var mxM=tblL.match(/(\d+)-max/);
+    var tblN=tblL.match(/Table '([^']+)'/);
+    if(mxM&&parseInt(mxM[1])===9&&tblN){
+      ftByTour[tid+"_tbl"]=tblN[1];
+    }
+  }
+
+  for(var bi=0;bi<blocks.length;bi++){
+    var block=blocks[bi];
+    if(!block.includes("Dealt to Hero")) continue;
+    var blockTourM=block.match(/Tournament #(\d+)/);
+    var blockTourId=blockTourM?blockTourM[1]:tourId;
+    if(!HHtours[blockTourId]) HHtours[blockTourId]={name:tourName||fname, n:0};
+
+    var h={id:"",cards:"",normCards:"",pos:"?",potBB:0,wonBB:0,bb:0,won:0,board:"",street:"fold_pre",raw:block,lvl:"",lvlNum:0,tid:blockTourId,stage:"rush",vpip:false,pfr:false,threebet:false,foldTo3bet:false,had3betOpp:false,hadF3bOpp:false,cbet:undefined,stackBB:0,allin:false,date:0,knockout:false};
+    var hM=block.match(/Poker Hand #(BR\S+):.*Level\s*[IVX]*(\d*)\s*\((\d+(?:,\d+)?)\/(\d+(?:,\d+)?)/);
+    if(!hM){var hM2=block.match(/Poker Hand #(BR\S+):/); if(!hM2) continue; h.id=hM2[1]; var bbM=block.match(/posts big blind (\d[\d,]*)/); h.bb=bbM?ch(bbM[1]):0; h.lvl="?";}
+    else{h.id=hM[1]; h.lvlNum=parseInt(hM[2]||"0"); h.lvl="L"+(hM[2]||"?"); h.bb=ch(hM[4]);}
+    var dtM=block.match(/- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})/);
+    if(dtM){var ds=dtM[1].replace(/(\d{4})\/(\d{2})\/(\d{2})/,"$1-$2-$3"); h.date=new Date(ds).getTime()||0;}
+
+    // stage = final якщо роздача на FT столі цього турніру
+    var tblLine=(block.split("\n")[1])||"";
+    var tblNM=tblLine.match(/Table '([^']+)'/);
+    var blockTable=tblNM?tblNM[1]:null;
+    var ftTbl=ftByTour[blockTourId+"_tbl"]||null;
+    h.stage=(blockTable&&ftTbl&&blockTable===ftTbl)?"final":"rush";
+
+    var dM=block.match(/Dealt to Hero \[([^\]]+)\]/);
+    if(dM){h.cards=dM[1]; h.normCards=normalizeHand(dM[1]);}
+    var stkM=block.match(/Seat \d+: Hero \(([\d,]+) in chips\)/);
+    if(stkM&&h.bb>0) h.stackBB=parseFloat((ch(stkM[1])/h.bb).toFixed(1));
+    var colAll=block.match(/Hero collected ([\d,]+) from/g);
+    if(colAll){var tot=0; colAll.forEach(function(m){var n=m.match(/(\d[\d,]+)/);if(n)tot+=ch(n[1]);}); if(tot>0){h.won=1;if(h.bb>0)h.wonBB=parseFloat((tot/h.bb).toFixed(1));}}
+    var tpM=block.match(/Total pot ([\d,]+)/); if(tpM&&h.bb>0) h.potBB=parseFloat((ch(tpM[1])/h.bb).toFixed(1));
+    var bM=block.match(/Board \[([^\]]+)\]/); if(bM) h.board=bM[1];
+    var sumIdx=block.indexOf("*** SUMMARY ***");
+    if(sumIdx>-1){
+      var sLines=block.substring(sumIdx).split("\n");
+      var hLine=sLines.find(function(l){return l.match(/Seat \d+: Hero \(/);});
+      if(hLine){var pm=hLine.match(/Hero \(([^)]+)\)/); if(pm){var rw=pm[1].toLowerCase(); if(rw.includes("button"))h.pos="BTN"; else if(rw.includes("small blind"))h.pos="SB"; else if(rw.includes("big blind"))h.pos="BB"; else h.pos=rw.toUpperCase().split(" ")[0];}}
+    }
+    if(h.pos==="?"){if(/\nHero: posts small blind/.test(block))h.pos="SB"; else if(/\nHero: posts big blind/.test(block))h.pos="BB";}
+    if(h.pos==="?"){
+      var btnM=block.match(/Seat #(\d+) is the button/), hSM=block.match(/Seat (\d+): Hero \(/);
+      if(btnM&&hSM){
+        var bS=parseInt(btnM[1]), hS=parseInt(hSM[1]);
+        if(bS===hS){h.pos="BTN";}
+        else{
+          var seats=[], sm=Array.from(block.matchAll(/^Seat (\d+): \w/gm));
+          for(var si=0;si<sm.length;si++) seats.push(parseInt(sm[si][1]));
+          seats.sort(function(a,b){return a-b;});
+          var sn=seats.length, bI=seats.indexOf(bS), hI=seats.indexOf(hS);
+          if(sn>0){var rel=((hI-bI)+sn)%sn; if(rel===1)h.pos="SB"; else if(rel===2)h.pos="BB"; else if(rel===sn-1)h.pos="CO"; else if(rel===sn-2)h.pos="HJ"; else if(rel===sn-3)h.pos="MP"; else h.pos="UTG";}
+        }
+      }
+    }
+    var hasF=block.includes("*** FLOP ***"), hasT=block.includes("*** TURN ***"), hasR=block.includes("*** RIVER ***");
+    if(h.won){if(hasR)h.street="river"; else if(hasT)h.street="turn"; else if(hasF)h.street="flop"; else h.street="preflop";}
+    else if(hasF) h.street="fold_flop";
+    var flopIdx=block.indexOf("*** FLOP ***"), hcIdx=block.indexOf("*** HOLE CARDS ***");
+    var prePart=flopIdx>-1?block.substring(hcIdx>-1?hcIdx:0,flopIdx):block.substring(hcIdx>-1?hcIdx:0);
+    var preLines=prePart.split("\n");
+    h.pfr=preLines.some(function(l){return l.startsWith("Hero:")&&(l.includes(": raises")||l.includes(": bets"));});
+    var firstVRI=-1;
+    for(var li=0;li<preLines.length;li++){if(preLines[li].match(/^\w[\w\d]+: raises/)&&!preLines[li].startsWith("Hero:")){firstVRI=li;break;}}
+    h.had3betOpp=(firstVRI>-1);
+    if(h.had3betOpp) h.threebet=preLines.slice(firstVRI+1).some(function(l){return l.startsWith("Hero:")&&l.includes(": raises");});
+    var heroRI=-1;
+    for(var li2=0;li2<preLines.length;li2++){if(preLines[li2].startsWith("Hero:")&&preLines[li2].includes(": raises")&&heroRI===-1){heroRI=li2;}}
+    if(heroRI>-1){
+      var afterHR=preLines.slice(heroRI+1);
+      if(afterHR.some(function(l){return l.match(/^\w[\w\d]+: raises/)&&!l.startsWith("Hero:");})){
+        h.hadF3bOpp=true;
+        h.foldTo3bet=afterHR.some(function(l){return l.startsWith("Hero:")&&l.includes(": folds");});
+      }
+    }
+    var heroPreLines=preLines.filter(function(l){return l.startsWith("Hero:");});
+    h.vpip=h.pfr||heroPreLines.some(function(l){return l.includes(": calls");})||(h.pos==="BB"&&hasF&&!heroPreLines.some(function(l){return l.includes(": folds");}));
+    if(hasF&&h.pfr){var fe=hasT?block.indexOf("*** TURN ***"):block.length; var fp=block.substring(flopIdx,fe); h.cbet=fp.split("\n").filter(function(l){return l.startsWith("Hero:");}).some(function(l){return l.includes(": bets");});}
+    if(h.stage==="final"&&h.won){
+      var si2=block.indexOf("*** SUMMARY ***");
+      if(si2>-1){
+        var sum=block.substring(si2);
+        var heroColTotal=0;
+        var hcRe=/Hero collected ([\d,]+) from/g; var hcM;
+        while((hcM=hcRe.exec(block))!==null) heroColTotal+=ch(hcM[1]);
+        var ocRe2=/(\w+) collected ([\d,]+) from/g; var ocM2;
+        var someoneCollectedMore=false;
+        while((ocM2=ocRe2.exec(block))!==null){if(ocM2[1]!=="Hero"&&ch(ocM2[2])>heroColTotal){someoneCollectedMore=true;break;}}
+        var lostRe=/Seat \d+: (\w+).*showed.*and lost/g;
+        var lostMatch;
+        while((lostMatch=lostRe.exec(sum))!==null){
+          var loser=lostMatch[1];
+          if(loser==="Hero") continue;
+          var seatRe=new RegExp("Seat \\d+: "+escRe(loser)+" \\((\\d[\\d,]*) in chips\\)");
+          var seatM=block.match(seatRe);
+          if(!seatM) continue;
+          var loserAllin=new RegExp("\\n"+escRe(loser)+":[^\\n]*and is all-in").test(block);
+          if(!loserAllin){
+            var loserStackM=block.match(new RegExp("Seat \\d+: "+escRe(loser)+" \\((\\d[\\d,]*) in chips\\)"));
+            if(loserStackM&&ch(loserStackM[1])<=h.bb) loserAllin=true;
+          }
+          if(!loserAllin){
+            // Hero went all-in and loser called committing all chips
+            // Check: total chips loser put in >= their starting stack
+            if(/\nHero:[^\n]*and is all-in/.test(block)){
+              var loserStack2M=block.match(new RegExp("Seat \\d+: "+escRe(loser)+" \\((\\d[\\d,]*) in chips\\)"));
+              if(loserStack2M){
+                var loserStartStack=ch(loserStack2M[1]);
+                // Sum all chips loser put in: antes, blinds, calls, raises
+                var loserContribRe=new RegExp("\\n"+escRe(loser)+":[^\\n]+(calls|raises[^\\n]+to|posts[^\\n]+blind|posts the ante) ([\\d,]+)","g");
+                var loserContribTotal=0; var lc2m;
+                while((lc2m=loserContribRe.exec(block))!==null){
+                  var amts=lc2m[0].match(/\b(\d[\d,]+)\b/g);
+                  if(amts) loserContribTotal=Math.max(loserContribTotal,ch(amts[amts.length-1]));
+                }
+                // Alternative: just check if callAmt >= stack - bb (already posted)
+                var loserCallM=block.match(new RegExp("\\n"+escRe(loser)+":[^\\n]*calls ([\\d,]+)"));
+                if(loserCallM){
+                  var callAmt=ch(loserCallM[1]);
+                  var anteM2=block.match(/posts the ante (\d[\d,]*)/);
+                  var ante2=anteM2?ch(anteM2[1]):0;
+                  // loser already posted ante, maybe blind
+                  var loserBlindM=block.match(new RegExp("\\n"+escRe(loser)+":[^\\n]*posts[^\\n]*(blind|ante) (\\d[\\d,]*)"));
+                  var loserPosted=loserBlindM?ch(loserBlindM[2]):ante2;
+                  if(callAmt+loserPosted>=loserStartStack) loserAllin=true;
+                }
+              }
+            }
+          }
+          if(!loserAllin) continue;
+          var loserCollected=new RegExp("Seat \\d+: "+escRe(loser)+"[^\\n]*collected").test(sum);
+          if(loserCollected) continue;
+          var loserGotUncalled=new RegExp("Uncalled bet[^\\n]*returned to "+escRe(loser)).test(block);
+          if(loserGotUncalled) continue;
+          if(someoneCollectedMore) continue;
+          h.knockout=true; break;
+        }
+      }
+    }
+    h.allin=/Hero.*all-in/.test(block);
+    // Ante KO: player with stack <= ante who folded and is absent in next hand (bi-1 = chronologically next)
+    if(h.stage==="final"&&h.won>0&&!h.knockout){
+      var anteKoM=block.match(/posts the ante (\d[\d,]*)/);
+      var anteAmt=anteKoM?ch(anteKoM[1]):0;
+      if(anteAmt>0){
+        var nextBlock=blocks[bi-1]||"";
+        var seatRe2=/Seat \d+: (\w+) \((\d[\d,]*) in chips\)/g; var sm2;
+        while((sm2=seatRe2.exec(block))!==null){
+          var pl=sm2[1]; var plStack=ch(sm2[2]);
+          if(pl==="Hero") continue;
+          if(plStack>anteAmt) continue;
+          var plE=pl.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+          var foldedInBlock=new RegExp("\\n"+plE+":[^\\n]*folds").test(block);
+          if(!foldedInBlock) continue;
+          var inNextBlock=new RegExp("Seat \\d+: "+plE+" \\(").test(nextBlock);
+          if(inNextBlock) continue;
+          h.knockout=true; break;
+        }
+      }
+    }
+    if(HHids.has(h.id)) continue; // skip duplicate hand (e.g. overlapping files re-uploaded)
+    HHids.add(h.id);
+    HH.push(h); HHtours[blockTourId].n++;
+  }
+}
+
+// ============================================================
+// SECTION: PARSER — RESULTS
+// ============================================================
+function parseRT(text,fname) {
+  var t={id:"",name:"",buyin:0,rake:0,bountyPool:0,players:0,pool:0,date:0,place:0,prize:0,fixedPrize:0,bountyEarned:0,itm:false,madeFT:false,fname:fname};
+  var iM=text.match(/Tournament #(\d+),\s*(.+)/); if(!iM) return null;
+  t.id=iM[1]; t.name=iM[2].replace(/,?\s*Hold'em.*$/i,"").trim();
+  var biM=text.match(/Buy-in:\s*\$([\d.]+)\+\$([\d.]+)(?:\+\$([\d.]+))?/);
+  if(biM){t.buyin=$d(biM[1]); t.rake=$d(biM[2]); t.bountyPool=$d(biM[3])||0;}
+  var plM=text.match(/(\d+)\s+Players/i); if(plM) t.players=parseInt(plM[1]);
+  var ppM=text.match(/Total Prize Pool:\s*\$([\d.]+)/); if(ppM) t.pool=$d(ppM[1]);
+  var dtM=text.match(/Tournament started ([\d\/]+ [\d:]+)/);
+  if(dtM){var ds=dtM[1].replace(/(\d{4})\/(\d{2})\/(\d{2})/,"$1-$2-$3"); t.date=new Date(ds).getTime()||0;}
+  var plcM=text.match(/(\d+)(?:st|nd|rd|th)\s*:\s*Hero[^$\n]*\$([\d.]+)/i);
+  if(!plcM) plcM=text.match(/(\d+)(?:st|nd|rd|th)\s*:\s*Hero[,\s]*\$([\d.]+)/i);
+  if(!plcM) plcM=text.match(/(\d+)(?:st|nd|rd|th)\s*:\s*Hero[,\s]*\$(\d+)\b/i);
+  if(plcM){t.place=parseInt(plcM[1]); t.prize=$d(plcM[2]); t.itm=t.place<=3&&t.prize>0;}
+  else{
+    var fbP=text.match(/finished.*?(\d+)(?:st|nd|rd|th)\s+place/i); if(fbP) t.place=parseInt(fbP[1]);
+    var fbR=text.match(/received a total of \$([\d.]+)/i);
+    if(!fbR) fbR=text.match(/received a total of \$(\d+)\b/i);
+    if(fbR){t.prize=$d(fbR[1]); t.itm=t.place<=3&&t.prize>0;}
+  }
+  // Determine config by buyin from file
+  var tCfg=null;
+  for(var ck in CONFIGS){var cc=CONFIGS[ck];if(Math.abs(cc.buyin-t.buyin)<0.01){tCfg=cc;break;}}
+  if(!tCfg) tCfg=cfg();
+  t.fixedPrize=tCfg.fixedPrizes[t.place]||0;
+  t.bountyEarned=Math.max(0,parseFloat((t.prize-t.fixedPrize).toFixed(2)));
+  t.madeFT=t.place>0&&t.place<=9;
+  return t;
+}
+
+function mergeHH() {
+  if(!HHraw.length) return;
+  var blob=new Blob([HHraw.join("\n\n")],{type:"text/plain;charset=utf-8"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="merged_mbr_hh.txt"; a.click();
+}
+
+// ============================================================
+// SECTION: MONTH FILTER — HH
+// ============================================================
+function buildHHMonthFilter() {
+  var months={};
+  for(var i=0;i<HH.length;i++){var k=getMonthKey(HH[i].date); if(!months[k]) months[k]=0; months[k]++;}
+  var keys=Object.keys(months).filter(function(k){return k!=="unknown";}).sort();
+  for(var i=0;i<keys.length;i++){if(allHHMonths[keys[i]]===undefined) allHHMonths[keys[i]]=true;}
+  var html="";
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    html+="<div class=\"mchk "+(allHHMonths[k]?"on":"")+"\" id=\"hhm-"+k+"\" onclick=\"toggleHHMonth('"+k+"')\">"+monthLabel(k)+" <span style=\"font-size:11px;opacity:.7\">("+months[k]+")</span></div>";
+  }
+  $e("hh-month-filter").innerHTML=html;
+  updateHHFilterCount();
+}
+function toggleHHMonth(k) { allHHMonths[k]=!allHHMonths[k]; var el=$e("hhm-"+k); if(el){if(allHHMonths[k])el.classList.add("on");else el.classList.remove("on");} updateHHFilterCount(); refreshHHStats(); }
+function selectAllHHMonths(v) { for(var k in allHHMonths) allHHMonths[k]=v; buildHHMonthFilter(); refreshHHStats(); }
+function updateHHFilterCount() { var on=Object.values(allHHMonths).filter(function(v){return v;}).length; $e("hh-filter-cnt").textContent="("+on+"/"+Object.keys(allHHMonths).length+")"; }
+function filteredHH() { return HH.filter(function(h){return allHHMonths[getMonthKey(h.date)]!==false;}); }
+
+// ============================================================
+// SECTION: MONTH FILTER — RESULTS
+// ============================================================
+function buildMonthFilter(tournaments) {
+  var months={};
+  for(var i=0;i<tournaments.length;i++){var k=getMonthKey(tournaments[i].date); if(!months[k]) months[k]=0; months[k]++;}
+  var keys=Object.keys(months).filter(function(k){return k!=="unknown";}).sort();
+  for(var i=0;i<keys.length;i++){if(activeMonths[keys[i]]===undefined) activeMonths[keys[i]]=true;}
+  var html="";
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    html+="<div class=\"mchk "+(activeMonths[k]?"on":"")+"\" id=\"resm-"+k+"\" onclick=\"toggleMonth('"+k+"')\">"+monthLabel(k)+" <span style=\"font-size:11px;opacity:.7\">("+months[k]+")</span></div>";
+  }
+  $e("month-filter").innerHTML=html;
+  updateFilterCount();
+}
+function toggleMonth(k) { activeMonths[k]=!activeMonths[k]; var el=$e("resm-"+k); if(el){if(activeMonths[k])el.classList.add("on");else el.classList.remove("on");} updateFilterCount(); refreshResStats(); }
+function selectAllMonths(v) { for(var k in activeMonths) activeMonths[k]=v; buildMonthFilter(allRT); refreshResStats(); }
+function updateFilterCount() { var on=Object.values(activeMonths).filter(function(v){return v;}).length; $e("res-filter-cnt").textContent="("+on+"/"+Object.keys(activeMonths).length+")"; }
+function filteredRT() { return allRT.filter(function(t){return activeMonths[getMonthKey(t.date)]!==false;}); }
+
+// ============================================================
+// SECTION: STATS CALC — HH
+// ============================================================
+function calcHH(hands) {
+  var n=hands.length; if(!n) return null;
+  var rush=hands.filter(function(h){return h.stage==="rush";}), final=hands.filter(function(h){return h.stage==="final";});
+  function calc(arr) {
+    if(!arr.length) return {n:0,vpP:0,pfP:0,tbP:0,f3bP:0,cbP:0,wr:0,avgStack:"--",wins:0,knockouts:0};
+    var vp=arr.filter(function(h){return h.vpip;}).length, pf=arr.filter(function(h){return h.pfr;}).length;
+    var tb=arr.filter(function(h){return h.threebet;}).length, f3b=arr.filter(function(h){return h.foldTo3bet;}).length;
+    var wins=arr.filter(function(h){return h.won;}).length, kos=arr.filter(function(h){return h.knockout;}).length;
+    var cbAll=arr.filter(function(h){return h.cbet!==undefined;}), cbMade=arr.filter(function(h){return h.cbet;}).length;
+    var stacks=arr.filter(function(h){return h.stackBB>0;});
+    var tb3opp=arr.filter(function(h){return h.had3betOpp;}).length, f3bOpp=arr.filter(function(h){return h.hadF3bOpp;}).length;
+    return {n:arr.length, vpP:Math.round(vp/arr.length*100), pfP:Math.round(pf/arr.length*100),
+      tbP:tb3opp>0?Math.round(tb/tb3opp*100):0, f3bP:f3bOpp>0?Math.round(f3b/f3bOpp*100):0,
+      wins:wins, wr:Math.round(wins/arr.length*100), cbP:cbAll.length?Math.round(cbMade/cbAll.length*100):0,
+      avgStack:stacks.length?(stacks.reduce(function(s,h){return s+h.stackBB;},0)/stacks.length).toFixed(1):"--", knockouts:kos};
+  }
+  var all=calc(hands), rushS=calc(rush), finalS=calc(final);
+  var pos={}, st={river:0,turn:0,flop:0,preflop:0,fold_pre:0,fold_flop:0};
+  for(var i=0;i<hands.length;i++){
+    var h=hands[i], p=h.pos||"?";
+    if(!pos[p]) pos[p]={n:0,w:0,vp:0,pf:0,tb:0,tbOpp:0,f3b:0,f3bOpp:0};
+    pos[p].n++; if(h.won)pos[p].w++; if(h.vpip)pos[p].vp++; if(h.pfr)pos[p].pf++;
+    if(h.threebet)pos[p].tb++; if(h.had3betOpp)pos[p].tbOpp++;
+    if(h.foldTo3bet)pos[p].f3b++; if(h.hadF3bOpp)pos[p].f3bOpp++;
+    if(st[h.street]!==undefined) st[h.street]++;
+  }
+  var cardStats={};
+  for(var i=0;i<hands.length;i++){
+    var h=hands[i];
+    if(!h.normCards||h.normCards==="?") continue;
+    var c=h.normCards; if(!cardStats[c]) cardStats[c]={n:0,w:0,netBB:0};
+    cardStats[c].n++; if(h.won){cardStats[c].w++; cardStats[c].netBB+=h.wonBB;}
+    else cardStats[c].netBB-=(h.potBB>0?h.potBB*0.12:2);
+  }
+  return {n:n, all:all, rushS:rushS, finalS:finalS, pos:pos, st:st, cardStats:cardStats, weaknesses:calcWeaknesses(all,rushS,st,n)};
+}
+
+function calcWeaknesses(all,rushS,st,n) {
+  var w=[];
+  if(st.fold_pre>0&&n>0&&(st.fold_pre/n)>0.55) w.push({sev:"high",txt:"Very high fold frequency - "+Math.round(st.fold_pre/n*100)+"%"});
+  if(rushS.vpP<18) w.push({sev:"high",txt:"Rush VPIP "+rushS.vpP+"% - too tight for 5-max"});
+  if(rushS.vpP>42) w.push({sev:"high",txt:"Rush VPIP "+rushS.vpP+"% - too loose"});
+  if(all.pfP<12) w.push({sev:"high",txt:"PFR "+all.pfP+"% - too passive"});
+  if(all.cbP>0&&all.cbP<35) w.push({sev:"med",txt:"CBet "+all.cbP+"% - too low"});
+  if(all.f3bP>60) w.push({sev:"med",txt:"Fold to 3bet "+all.f3bP+"% - too often"});
+  if(all.tbP<5&&all.n>30) w.push({sev:"med",txt:"3bet "+all.tbP+"% - very low"});
+  if(!w.length) w.push({sev:"ok",txt:"No critical leaks found"});
+  return w;
+}
+
+// ============================================================
+// SECTION: DECISION REVIEW (rule-based, no AI/network — Chen score + range charts)
+// ============================================================
+function chenScore(nc) {
+  if(!nc||nc==="?"||nc.length<2) return 0;
+  var order="AKQJT98765432";
+  var r1=nc[0], r2=nc[1], suited=nc.length===3&&nc[2]==="s";
+  var pts={A:10,K:8,Q:7,J:6,T:5};
+  function base(r){ return pts[r]!==undefined?pts[r]:parseInt(r,10)/2; }
+  var score;
+  if(r1===r2){ score=Math.max(base(r1)*2,5); }
+  else{
+    score=Math.max(base(r1),base(r2));
+    if(suited) score+=2;
+    var i1=order.indexOf(r1), i2=order.indexOf(r2), gap=Math.abs(i1-i2)-1;
+    if(gap<=0) score+=1; else if(gap===1) score-=1; else if(gap===2) score-=2; else if(gap===3) score-=4; else score-=5;
+  }
+  return Math.round(score*2)/2;
+}
+
+var DR_POS_GROUP={UTG:"early","UTG+1":"early",MP:"early",HJ:"late",CO:"late",BTN:"late",SB:"blind",BB:"blind","?":"early"};
+var DR_OPEN_THRESH={early:9,late:6,blind:8};
+var DR_FACE_OPEN_THRESH={early:9,late:7,blind:9};
+var DR_FACE_3BET_THRESH=10;
+function drPushThresh(stackBB,group) {
+  if(stackBB<=6) return group==="early"?6:(group==="late"?4:5);
+  if(stackBB<=10) return group==="early"?8:(group==="late"?6:6);
+  return group==="early"?10:(group==="late"?7:8);
+}
+function drPreLines(raw) {
+  var flopIdx=raw.indexOf("*** FLOP ***"), hcIdx=raw.indexOf("*** HOLE CARDS ***");
+  var prePart=flopIdx>-1?raw.substring(hcIdx>-1?hcIdx:0,flopIdx):raw.substring(hcIdx>-1?hcIdx:0);
+  return prePart.split("\n");
+}
+function drFacingOpen(preLines) {
+  var heroIdx=-1;
+  for(var i=0;i<preLines.length;i++){ if(preLines[i].indexOf("Hero:")===0){heroIdx=i;break;} }
+  if(heroIdx===-1) return {faced:false};
+  var raisesBefore=0;
+  for(var i=0;i<heroIdx;i++){ if(/^\w[\w\d]+: raises/.test(preLines[i])&&preLines[i].indexOf("Hero:")!==0) raisesBefore++; }
+  if(raisesBefore===0) return {faced:false};
+  var hl=preLines[heroIdx];
+  var action=hl.indexOf(": folds")>-1?"fold":hl.indexOf(": raises")>-1?"raise":hl.indexOf(": calls")>-1?"call":hl.indexOf(": checks")>-1?"check":"other";
+  return {faced:true,raisesBefore:raisesBefore,action:action};
+}
+function drMk(cat,verdict,reason) { return {cat:cat,verdict:verdict,reason:reason}; }
+
+function judgeHandDecision(h) {
+  if(!h.normCards||h.normCards==="?") return null;
+  var chen=chenScore(h.normCards), group=DR_POS_GROUP[h.pos]||"early", pl=drPreLines(h.raw);
+
+  if(h.stackBB>0&&h.stackBB<=15) {
+    var thr=drPushThresh(h.stackBB,group);
+    if(h.allin) {
+      if(chen<thr-2) return drMk("pushfold","mistake","Пуш "+h.normCards+" ("+h.stackBB+"bb, "+h.pos+") — занадто широко для цієї глибини/позиції.");
+      if(chen<thr) return drMk("pushfold","marginal","Пуш "+h.normCards+" ("+h.stackBB+"bb) — межова рука, спірне рішення.");
+      return drMk("pushfold","correct","Пуш "+h.normCards+" ("+h.stackBB+"bb) — в межах пуш-діапазону.");
+    }
+    if(!h.vpip) {
+      if(chen>=thr+2) return drMk("pushfold","mistake","Фолд "+h.normCards+" ("+h.stackBB+"bb, "+h.pos+") — рука сильніша за поріг пушу, варто було йти в пуш.");
+      return drMk("pushfold","correct","Фолд "+h.normCards+" ("+h.stackBB+"bb) — обґрунтовано на такій глибині.");
+    }
+    return drMk("pushfold","mistake","Розіграш "+h.normCards+" колом/коллом на "+h.stackBB+"bb — на такій глибині потрібен чіткий пуш/фолд, не флет.");
+  }
+
+  var fo=drFacingOpen(pl);
+  if(fo.faced&&fo.raisesBefore===1) {
+    var thr2=DR_FACE_OPEN_THRESH[group];
+    if(fo.action==="fold") {
+      if(chen>=thr2+2) return drMk("facing_open","mistake","Фолд "+h.normCards+" проти опену — рука сильна для продовження ("+h.pos+").");
+      return drMk("facing_open","correct","Фолд "+h.normCards+" проти опену — обґрунтовано.");
+    }
+    if(fo.action==="call"||fo.action==="raise") {
+      if(chen<thr2-3) return drMk("facing_open","mistake",(fo.action==="call"?"Колл":"3-бет")+" "+h.normCards+" проти опену — рука занадто слабка для продовження.");
+      return drMk("facing_open","correct",(fo.action==="call"?"Колл":"3-бет")+" "+h.normCards+" проти опену — в межах діапазону.");
+    }
+  }
+
+  if(h.hadF3bOpp) {
+    if(h.foldTo3bet) {
+      if(chen>=DR_FACE_3BET_THRESH+2) return drMk("facing_3bet","mistake","Фолд "+h.normCards+" на 3-бет — рука занадто сильна, щоб скидати.");
+      return drMk("facing_3bet","correct","Фолд "+h.normCards+" на 3-бет — норм.");
+    }
+    if(chen<DR_FACE_3BET_THRESH-3) return drMk("facing_3bet","mistake","Продовження з "+h.normCards+" проти 3-бету — рука занадто слабка.");
+    return drMk("facing_3bet","correct","Продовження з "+h.normCards+" проти 3-бету — обґрунтовано.");
+  }
+
+  if(!fo.faced) {
+    var thr3=DR_OPEN_THRESH[group];
+    if(h.pfr) {
+      if(chen<thr3-3) return drMk("open","mistake","Опен-рейз "+h.normCards+" з "+h.pos+" — занадто широко для цієї позиції.");
+      return drMk("open","correct","Опен-рейз "+h.normCards+" з "+h.pos+" — в межах діапазону.");
+    }
+    if(!h.vpip) {
+      if(chen>=thr3+3) return drMk("open","mistake","Фолд "+h.normCards+" з "+h.pos+" — сильна рука, варто було відкривати.");
+      return drMk("open","correct","Фолд "+h.normCards+" з "+h.pos+" — обґрунтовано.");
+    }
+  }
+  return null;
+}
+
+function analyzeDecisions(hands) {
+  var cats={open:{c:0,m:0,g:0},facing_open:{c:0,m:0,g:0},facing_3bet:{c:0,m:0,g:0},pushfold:{c:0,m:0,g:0}};
+  var mistakes=[], total=0, correct=0, mistake=0, marginal=0, byMonth={};
+  for(var i=0;i<hands.length;i++) {
+    var h=hands[i], v=judgeHandDecision(h);
+    if(!v) continue;
+    total++;
+    var mk3=getMonthKey(h.date);
+    if(!byMonth[mk3]) byMonth[mk3]={n:0,c:0};
+    byMonth[mk3].n++;
+    if(v.verdict==="correct"){ correct++; cats[v.cat].c++; byMonth[mk3].c++; }
+    else if(v.verdict==="mistake"){ mistake++; cats[v.cat].m++; mistakes.push({h:h,reason:v.reason,cat:v.cat}); }
+    else { marginal++; cats[v.cat].g++; }
+  }
+  return {total:total,correct:correct,mistake:mistake,marginal:marginal,cats:cats,mistakes:mistakes,byMonth:byMonth};
+}
+
+// ============================================================
+// SECTION: RANGE CHARTS (open / vs open / vs 3bet / push-fold)
+// ============================================================
+var RC_RANKS="AKQJT98765432", rcMode="open";
+function setRangeMode(m,b) {
+  rcMode=m;
+  document.querySelectorAll("#rc-modes .btn").forEach(function(x){x.classList.remove("btn-primary");});
+  if(b) b.classList.add("btn-primary");
+  $e("rc-stack-wrap").style.display=m==="pushfold"?"block":"none";
+  $e("rc-pos-wrap").style.display=m==="vs_3bet"?"none":"block";
+  renderRangeChart();
+}
+function rcCellInfo(nc,mode,group,stackBB) {
+  var chen=chenScore(nc);
+  if(mode==="open") {
+    var thr=DR_OPEN_THRESH[group];
+    if(chen>=thr) return {bg:"#0F6E56",fg:"#fff",lbl:"open"};
+    if(chen>=thr-3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
+    return {bg:"#eee",fg:"#999",lbl:"fold"};
+  }
+  if(mode==="vs_open") {
+    var thr2=DR_FACE_OPEN_THRESH[group];
+    if(chen>=thr2+6) return {bg:"#122033",fg:"#fff",lbl:"3-bet"};
+    if(chen>=thr2+2) return {bg:"#185FA5",fg:"#fff",lbl:"call"};
+    if(chen>=thr2-3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
+    return {bg:"#eee",fg:"#999",lbl:"fold"};
+  }
+  if(mode==="vs_3bet") {
+    var thr3=DR_FACE_3BET_THRESH;
+    if(chen>=thr3+2) return {bg:"#185FA5",fg:"#fff",lbl:"call"};
+    if(chen>=thr3-3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
+    return {bg:"#eee",fg:"#999",lbl:"fold"};
+  }
+  var thr4=drPushThresh(stackBB,group);
+  if(chen>=thr4) return {bg:"#0F6E56",fg:"#fff",lbl:"push"};
+  if(chen>=thr4-2) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
+  return {bg:"#eee",fg:"#999",lbl:"fold"};
+}
+var RC_LEGEND={
+  open:"🟩 Відкривати · 🟨 Спірно (близько до межі) · ⬜ Фолд",
+  vs_open:"⬛ 3-бет · 🟦 Колл · 🟨 Спірно · ⬜ Фолд",
+  vs_3bet:"🟦 Колл/4-бет · 🟨 Спірно (поріг у моделі не залежить від позиції) · ⬜ Фолд",
+  pushfold:"🟩 Пуш · 🟨 Спірно · ⬜ Фолд"
+};
+var rcSrc="theory";
+function setRangeSrc(s,b) {
+  rcSrc=s;
+  document.querySelectorAll("#rc-src .btn").forEach(function(x){x.classList.remove("btn-primary");});
+  if(b) b.classList.add("btn-primary");
+  renderRangeChart();
+}
+// Реальний результат з власних роздач: n разів у цьому контексті (позиція+режим, для пуш/фолду ще й стек ±3bb),
+// % виграних і чистий bb (та сама оцінка, що й у Top hands: h.wonBB коли виграно, інакше -potBB*0.12 або -2bb).
+function rcMyStats(mode,pos,stackBB) {
+  var hands=filteredHH(), stats={};
+  for(var i=0;i<hands.length;i++) {
+    var h=hands[i], v=judgeHandDecision(h);
+    if(!v||v.cat!==mode) continue;
+    if(mode!=="vs_3bet"&&h.pos!==pos) continue;
+    if(mode==="pushfold"&&Math.abs(h.stackBB-stackBB)>3) continue;
+    if(!h.normCards||h.normCards==="?") continue;
+    var s=stats[h.normCards]||(stats[h.normCards]={n:0,wins:0,netBB:0});
+    s.n++;
+    if(h.won){ s.wins++; s.netBB+=h.wonBB; } else { s.netBB-=(h.potBB>0?h.potBB*0.12:2); }
+  }
+  return stats;
+}
+function rcCellInfoMine(nc,stats) {
+  var s=stats[nc];
+  if(!s||!s.n) return {bg:"#f5f5f5",fg:"#ccc",lbl:"немає даних",sub:""};
+  var wr=Math.round(s.wins/s.n*100);
+  if(s.n<3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:s.n+"x, WR"+wr+"%, "+(s.netBB>=0?"+":"")+s.netBB.toFixed(1)+"bb (мало даних)",sub:s.n+"x"};
+  if(s.netBB>0) return {bg:"#0F6E56",fg:"#fff",lbl:s.n+"x, WR"+wr+"%, +"+s.netBB.toFixed(1)+"bb",sub:s.n+"x ·+"+s.netBB.toFixed(0)};
+  return {bg:"#A32D2D",fg:"#fff",lbl:s.n+"x, WR"+wr+"%, "+s.netBB.toFixed(1)+"bb",sub:s.n+"x ·"+s.netBB.toFixed(0)};
+}
+function renderRangeChart() {
+  var grid=$e("rc-grid"); if(!grid) return;
+  var pos=$e("rc-pos").value, group=DR_POS_GROUP[pos]||"early";
+  var stackBB=parseFloat($e("rc-stack").value)||10;
+  var mine=rcSrc==="mine", stats=mine?rcMyStats(rcMode,pos,stackBB):null;
+  var totalN=0; if(mine) for(var k in stats) totalN+=stats[k].n;
+  var html="";
+  for(var i=0;i<13;i++) {
+    for(var j=0;j<13;j++) {
+      var nc;
+      if(i===j) nc=RC_RANKS[i]+RC_RANKS[j];
+      else if(i<j) nc=RC_RANKS[i]+RC_RANKS[j]+"s";
+      else nc=RC_RANKS[j]+RC_RANKS[i]+"o";
+      var info=mine?rcCellInfoMine(nc,stats):rcCellInfo(nc,rcMode,group,stackBB);
+      var sub=mine&&info.sub?"<div style=\"font-size:7px;opacity:.85\">"+info.sub+"</div>":"";
+      html+="<div style=\"background:"+info.bg+";color:"+info.fg+";display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;border-radius:3px;font-size:10px;line-height:1.1\" title=\""+nc+" — "+info.lbl+"\">"+nc+sub+"</div>";
+    }
+  }
+  grid.innerHTML=html;
+  if(mine) {
+    $e("rc-legend").textContent=(totalN?"Разом "+totalN+" роздач у цьому контексті. ":"Даних немає для цього контексту. ")+"🟩 Прибутково · 🟥 Збитково · 🟨 <3 разів (ненадійно) · ⬜ 0 разів";
+  } else {
+    $e("rc-legend").textContent=RC_LEGEND[rcMode];
+  }
+}
+
+var drChart=null, drLastResult=null;
+function runDecisionReview() {
+  var hands=filteredHH();
+  $e("hh-dec-r").innerHTML="<span class=\"spinner\"></span>Обробка "+hands.length+" роздач...";
+  setTimeout(function(){
+    var res=analyzeDecisions(hands);
+    drLastResult=res;
+    renderDecisionResults(res);
+  },20);
+}
+
+function showHandFromDecisions(id) {
+  hhTab("hands",document.querySelectorAll("#hh-stabs .st")[4]);
+  showHand(id);
+}
+
+var DR_CAT_LABEL={open:"Відкриття",facing_open:"Захист проти опену",facing_3bet:"Проти 3-бету",pushfold:"Пуш/фолд"};
+function renderDecisionResults(res) {
+  if(!res.total){ $e("hh-dec-r").innerHTML="<div class=\"alert a-info\">Замало даних із чіткими преф-лоп рішеннями у вибраному періоді.</div>"; return; }
+  var accP=Math.round(res.correct/res.total*100);
+  var html="<div class=\"sgrid\" style=\"margin-bottom:1rem\">"+
+    "<div class=\"sc\"><div class=\"sc-l\">Проаналізовано</div><div class=\"sc-v c-blue\">"+res.total+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Правильних</div><div class=\"sc-v "+(accP>=65?"c-green":"c-amber")+"\">"+accP+"%</div><div class=\"sc-s\">"+res.correct+"x</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Помилок</div><div class=\"sc-v c-red\">"+res.mistake+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Спірних</div><div class=\"sc-v c-amber\">"+res.marginal+"</div></div></div>";
+
+  html+="<div class=\"sec-l\">По категоріях</div>";
+  Object.keys(res.cats).forEach(function(k){
+    var d=res.cats[k], n=d.c+d.m+d.g; if(!n) return;
+    var p=Math.round(d.c/n*100);
+    html+="<div class=\"br\"><div class=\"bl\">"+DR_CAT_LABEL[k]+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+p+"%;background:"+(p>=65?"#0F6E56":"#854F0B")+"\"></div></div><div class=\"bv\">"+n+"x</div><div class=\"be\">"+p+"%</div></div>";
+  });
+
+  html+="<div style=\"margin-top:1rem\"><canvas id=\"hh-dec-chart\" height=\"180\"></canvas></div>";
+
+  var worst=res.mistakes.slice(0,40);
+  html+="<div class=\"sec-l\" style=\"margin-top:1rem\">Найгірші рішення (до 40)</div>";
+  if(!worst.length) html+="<p style=\"color:#666\">Помилок не знайдено 🎉</p>";
+  worst.forEach(function(m){
+    var h=m.h;
+    html+="<div class=\"hi\" onclick=\"showHandFromDecisions('"+h.id+"')\"><div><div class=\"hi-name\">"+(h.cards||h.normCards)+" <span class=\""+h.stage+"\">"+h.stage.toUpperCase()+"</span></div><div class=\"hi-meta\">"+m.reason+"</div></div></div>";
+  });
+  $e("hh-dec-r").innerHTML=html;
+  renderDecisionChart(res.byMonth);
+}
+
+function renderDecisionChart(byMonth) {
+  var canvas=document.getElementById("hh-dec-chart");
+  if(!canvas) return;
+  var months=Object.keys(byMonth).sort();
+  var labels=months.map(monthLabel);
+  var data=months.map(function(k){ return Math.round(byMonth[k].c/byMonth[k].n*100); });
+  drChart=destroyChart(drChart);
+  drChart=new Chart(canvas.getContext("2d"),{
+    type:"line",
+    data:{labels:labels,datasets:[{label:"% правильних рішень",data:data,backgroundColor:"rgba(15,110,86,0.12)",borderColor:"#0F6E56",borderWidth:2,fill:true,pointRadius:3,tension:0.3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(it){return it.raw+"% правильних";}}}},
+      scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+"%";},font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.06)"}},x:{ticks:{font:{size:10},color:"#999"},grid:{display:false}}}
+    }
+  });
+}
+
+// ============================================================
+// SECTION: RENDER — HH STATS
+// ============================================================
+function doHH() { if(!HH.length) return; allHHMonths={}; buildHHMonthFilter(); $e("HH-up").style.display="none"; $e("HH-res").style.display="block"; refreshHHStats(); }
+
+function refreshHHStats() {
+  var hands=filteredHH();
+  if(!hands.length){$e("hh-rtitle").textContent="No data"; $e("hh-sg").innerHTML=""; return;}
+  var s=calcHH(hands);
+  $e("hh-rtitle").textContent="Hero - "+cfg().label+" - Hand History";
+  $e("hh-rsub").textContent=s.n+" hands - Rush: "+s.rushS.n+" - Final: "+s.finalS.n;
+  $e("hh-sg").innerHTML=
+    "<div class=\"sc\"><div class=\"sc-l\">Hands</div><div class=\"sc-v c-blue\">"+s.n+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">VPIP</div><div class=\"sc-v "+(s.all.vpP<18||s.all.vpP>42?"c-amber":"c-green")+"\">"+s.all.vpP+"%</div><div class=\"sc-s\">R:"+s.rushS.vpP+"% F:"+s.finalS.vpP+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">PFR</div><div class=\"sc-v "+(s.all.pfP<10?"c-amber":"c-blue")+"\">"+s.all.pfP+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">3bet</div><div class=\"sc-v "+(s.all.tbP<4?"c-amber":"c-blue")+"\">"+s.all.tbP+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">F3bet</div><div class=\"sc-v "+(s.all.f3bP>60?"c-amber":"c-blue")+"\">"+s.all.f3bP+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">CBet</div><div class=\"sc-v "+(s.all.cbP<35&&s.all.cbP>0?"c-amber":"c-blue")+"\">"+s.all.cbP+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Win rate</div><div class=\"sc-v "+(s.all.wr>=50?"c-green":"c-red")+"\">"+s.all.wr+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Avg stack</div><div class=\"sc-v\">"+s.all.avgStack+"</div><div class=\"sc-s\">BB</div></div>";
+
+  var vLbl=s.all.vpP<18?"Tight":s.all.vpP<30?"Normal":s.all.vpP<42?"Loose":"Very loose";
+  var vCls=s.all.vpP<18?"p-blue":s.all.vpP<30?"p-green":s.all.vpP<42?"p-amber":"p-red";
+  var pLbl=s.all.pfP<12?"Passive":s.all.pfP<24?"Aggressive":"Hyper";
+  var pCls=s.all.pfP<12?"p-amber":s.all.pfP<24?"p-green":"p-red";
+  $e("hh-ov-c").innerHTML=
+    "<div class=\"two-col\">"+
+    "<div><div class=\"sec-l\">Play style</div>"+
+    sr("VPIP",s.all.vpP+"% "+pill(vCls,vLbl))+
+    sr("PFR",s.all.pfP+"% "+pill(pCls,pLbl))+
+    sr("3bet %",s.all.tbP+"% <span style=\"font-size:11px;color:#999\">(norm 5-10%)</span>")+
+    sr("Fold to 3bet",s.all.f3bP+"% <span style=\"font-size:11px;color:#999\">(norm 45-65%)</span>")+
+    sr("CBet",s.all.cbP+"%")+"</div>"+
+    "<div><div class=\"sec-l\">By stage</div>"+
+    sr("<span class=\"rush\">RUSH</span> hands",s.rushS.n)+
+    sr("<span class=\"rush\">RUSH</span> VPIP/PFR",s.rushS.vpP+"%/"+s.rushS.pfP+"%")+
+    sr("<span class=\"rush\">RUSH</span> 3bet/F3b",s.rushS.tbP+"%/"+s.rushS.f3bP+"%")+
+    sr("<span class=\"final\">FINAL</span> hands",s.finalS.n)+
+    sr("<span class=\"final\">FINAL</span> VPIP/PFR",s.finalS.vpP+"%/"+s.finalS.pfP+"%")+
+    sr("<span class=\"final\">FINAL</span> 3bet/F3b",s.finalS.tbP+"%/"+s.finalS.f3bP+"%")+"</div></div>";
+
+  var streetNames={river:"River +",turn:"Turn +",flop:"Flop +",preflop:"Pref +",fold_flop:"Fold flop",fold_pre:"Fold preflop"};
+  var streetColors={river:"#0F6E56",turn:"#185FA5",flop:"#185FA5",preflop:"#185FA5",fold_flop:"#854F0B",fold_pre:"#A32D2D"};
+  var rushStreets="";
+  ["river","turn","flop","preflop","fold_flop","fold_pre"].forEach(function(k){
+    var v=hands.filter(function(h){return h.stage==="rush"&&h.street===k;}).length;
+    var pct=s.rushS.n>0?Math.round(v/s.rushS.n*100):0;
+    rushStreets+="<div class=\"br\"><div class=\"bl\">"+streetNames[k]+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+pct+"%;background:"+streetColors[k]+"\"></div></div><div class=\"bv\">"+v+"</div><div class=\"be\">"+pct+"%</div></div>";
+  });
+  $e("hh-rush-c").innerHTML=
+    "<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:1rem\">5-max fast-fold. Norm: VPIP 22-32%, PFR 18-26%, 3bet 6-10%, CBet 50-65%.</div>"+
+    "<div class=\"two-col\"><div><div class=\"sec-l\">Stats</div>"+
+    sr("Hands",s.rushS.n)+sr("VPIP",s.rushS.vpP+"%")+sr("PFR",s.rushS.pfP+"%")+
+    sr("3bet",s.rushS.tbP+"%")+sr("Fold to 3bet",s.rushS.f3bP+"%")+sr("CBet",s.rushS.cbP+"%")+sr("Win rate",s.rushS.wr+"%")+
+    "</div><div><div class=\"sec-l\">Streets</div>"+rushStreets+"</div></div>";
+
+  var shortH=hands.filter(function(h){return h.stage==="final"&&h.stackBB>0&&h.stackBB<15;}).length;
+  $e("hh-final-c").innerHTML=
+    "<div class=\"alert a-amber\" style=\"font-size:12px;margin-bottom:1rem\">9-max Mystery Bounty. Push/fold &lt;15 BB. ICM critical.</div>"+
+    "<div class=\"two-col\"><div><div class=\"sec-l\">Stats</div>"+
+    sr("Hands",s.finalS.n)+sr("VPIP/PFR",s.finalS.vpP+"%/"+s.finalS.pfP+"%")+
+    sr("3bet/F3b",s.finalS.tbP+"%/"+s.finalS.f3bP+"%")+sr("Win rate",s.finalS.wr+"%")+
+    sr("Avg stack",s.finalS.avgStack+" BB")+sr("Hands &lt;15 BB",shortH)+
+    "</div><div><div class=\"sec-l\">Push/fold</div>"+
+    "<div style=\"font-size:13px;line-height:2.2;color:#666\">"+
+    "<div>"+pill("p-red","&lt;10 BB")+" push/fold mandatory</div>"+
+    "<div>"+pill("p-amber","10-15 BB")+" mostly push/fold</div>"+
+    "<div>"+pill("p-blue","15-25 BB")+" standard raises</div>"+
+    "<div>"+pill("p-green","&gt;25 BB")+" full postflop</div>"+
+    "</div></div></div>";
+
+  var PO=["BTN","SB","BB","CO","HJ","MP","UTG+1","UTG","?"];
+  var ph="";
+  for(var i=0;i<PO.length;i++){
+    var pp=PO[i], d=s.pos[pp]; if(!d||d.n<2) continue;
+    var wr=Math.round(d.w/d.n*100), pf=Math.round(d.pf/d.n*100);
+    var tb=d.tbOpp>0?Math.round(d.tb/d.tbOpp*100):0, f3b=d.f3bOpp>0?Math.round(d.f3b/d.f3bOpp*100):0;
+    ph+="<div style=\"margin-bottom:8px\"><div style=\"display:flex;align-items:center;gap:8px;margin-bottom:3px\">"+
+      "<div class=\"bl\">"+pp+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+wr+"%;background:#185FA5\"></div></div>"+
+      "<div class=\"bv\">"+wr+"%</div><div class=\"be\">"+d.n+"</div></div>"+
+      "<div style=\"font-size:11px;color:#666;font-family:monospace;padding-left:128px\">PFR "+pf+"% &middot; 3bet "+tb+"% &middot; F3b "+f3b+"%</div></div>";
+  }
+  $e("hh-pos-c").innerHTML=ph||"<p style=\"color:#666\">Not enough data</p>";
+
+  var allCards=Object.entries(s.cardStats).filter(function(e){return e[1].n>=2;});
+  var topWin=allCards.filter(function(e){return e[1].netBB>0;}).sort(function(a,b){return b[1].netBB-a[1].netBB;}).slice(0,15);
+  var topLoss=allCards.filter(function(e){return e[1].netBB<0;}).sort(function(a,b){return a[1].netBB-b[1].netBB;}).slice(0,15);
+  var wHtml=topWin.map(function(e){return sr("<span style=\"font-family:monospace;font-weight:500\">"+e[0]+"</span>","<span class=\"c-green\">+"+e[1].netBB.toFixed(1)+"bb</span> <span style=\"font-size:11px;color:#999\">"+e[1].n+"x WR"+Math.round(e[1].w/e[1].n*100)+"%</span>");}).join("");
+  var lHtml=topLoss.map(function(e){return sr("<span style=\"font-family:monospace;font-weight:500\">"+e[0]+"</span>","<span class=\"c-red\">"+e[1].netBB.toFixed(1)+"bb</span> <span style=\"font-size:11px;color:#999\">"+e[1].n+"x WR"+Math.round(e[1].w/e[1].n*100)+"%</span>");}).join("");
+  $e("hh-cards-c").innerHTML="<div class=\"two-col\"><div><div class=\"sec-l\" style=\"color:#0F6E56\">Top profitable</div>"+(wHtml||"<p style=\"color:#666\">Not enough</p>")+"</div><div><div class=\"sec-l\" style=\"color:#A32D2D\">Top losing</div>"+(lHtml||"<p style=\"color:#666\">Not enough</p>")+"</div></div>";
+
+  var sevBg={high:"a-err",med:"a-amber",ok:"a-ok"};
+  var sevPill={high:"p-red",med:"p-amber",ok:"p-green"};
+  var sevLabel={high:"Critical",med:"Important",ok:"Good"};
+  var wkHtml=s.weaknesses.map(function(w){return "<div class=\"alert "+sevBg[w.sev]+"\" style=\"margin-bottom:.5rem;display:flex;gap:8px;align-items:flex-start\"><span class=\"pill "+sevPill[w.sev]+"\" style=\"flex-shrink:0;margin-top:1px\">"+sevLabel[w.sev]+"</span><span>"+w.txt+"</span></div>";}).join("");
+  $e("hh-weak-c").innerHTML=wkHtml;
+
+  var pfEl=$e("fP"); pfEl.innerHTML="<option value=\"all\">All positions</option>";
+  for(var i=0;i<PO.length;i++){if(s.pos[PO[i]]&&s.pos[PO[i]].n>1){var o=document.createElement("option"); o.value=PO[i]; o.textContent=PO[i]; pfEl.appendChild(o);}}
+  hhPage=1; renderHL(1);
+  var dc=$e("hh-dec-cnt"); if(dc) dc.textContent=hands.length;
+  var dr=$e("hh-dec-r"); if(dr) dr.innerHTML="";
+  drLastResult=null;
+}
+
+// ============================================================
+// SECTION: RENDER — HAND LIST
+// ============================================================
+function getFilteredHands() {
+  var fh=filteredHH();
+  var rf=$e("fR").value, rs=$e("fS").value, pf=$e("fP").value;
+  return fh.filter(function(h){
+    if(rf==="win"&&!h.won) return false;
+    if(rf==="loss"&&h.won) return false;
+    if(rs==="rush"&&h.stage!=="rush") return false;
+    if(rs==="final"&&h.stage!=="final") return false;
+    if(pf!=="all"&&h.pos!==pf) return false;
+    return true;
+  });
+}
+
+function renderHL(page) {
+  if(page) hhPage=page;
+  var fil=getFilteredHands();
+  var totalPages=Math.ceil(fil.length/PER_PAGE);
+  var start=(hhPage-1)*PER_PAGE, end=Math.min(start+PER_PAGE,fil.length);
+  var show=fil.slice(start,end);
+  $e("hh-hcnt").textContent="("+fil.length+")";
+  var html="";
+  for(var i=0;i<show.length;i++){
+    var h=show[i];
+    html+="<div class=\"hi\" onclick=\"showHand('"+h.id+"')\">";
+    html+="<div><div class=\"hi-name\">"+h.id.replace("BR","");
+    if(h.cards) html+=" ["+h.cards+"] ("+h.normCards+")";
+    html+=" <span class=\""+h.stage+"\">"+h.stage.toUpperCase()+"</span></div>";
+    html+="<div class=\"hi-meta\">"+h.pos+" &middot; "+h.lvl+"("+h.bb+"BB) &middot; "+h.stackBB+"bb";
+    if(h.board) html+=" &middot; "+h.board;
+    html+="</div></div>";
+    html+="<div class=\""+(h.won?"hw":"hl")+"\" style=\"font-size:13px;font-family:monospace;flex-shrink:0\">"+(h.won?"+"+h.wonBB+"bb":"--")+"</div></div>";
+  }
+  $e("hh-hl").innerHTML=html;
+  if(totalPages<=1){$e("hh-pages").innerHTML=""; return;}
+  var pg="<span class=\"pg-info\">"+(start+1)+"-"+end+" / "+fil.length+"</span>";
+  if(hhPage>1) pg+="<button class=\"pg-btn\" onclick=\"renderHL(1)\">&laquo;</button><button class=\"pg-btn\" onclick=\"renderHL("+(hhPage-1)+")\">&lsaquo;</button>";
+  var from=Math.max(1,hhPage-3), to=Math.min(totalPages,hhPage+3);
+  for(var p=from;p<=to;p++) pg+="<button class=\"pg-btn "+(p===hhPage?"on":"")+"\" onclick=\"renderHL("+p+")\">"+p+"</button>";
+  if(hhPage<totalPages) pg+="<button class=\"pg-btn\" onclick=\"renderHL("+(hhPage+1)+")\">&rsaquo;</button><button class=\"pg-btn\" onclick=\"renderHL("+totalPages+")\">&raquo;</button>";
+  $e("hh-pages").innerHTML=pg;
+}
+
+function showHand(id) {
+  var h=HH.find(function(x){return x.id===id;}); if(!h) return;
+  var sec=$e("hh-hd"); sec.style.display="block";
+  var sid=id.replace(/[^a-z0-9]/gi,"_");
+  var html="<div style=\"display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem\">";
+  if(h.cards) html+=pill("p-blue","["+h.cards+"] "+h.normCards);
+  if(h.board) html+=pill("p-blue",h.board);
+  html+=pill("p-gray",h.pos)+pill("p-gray",h.lvl+" BB="+h.bb)+pill("p-gray","Stack:"+h.stackBB+"bb");
+  html+="<span class=\""+h.stage+"\">"+h.stage.toUpperCase()+"</span>";
+  if(h.knockout) html+=pill("p-green","KNOCKOUT &#128176;");
+  html+=pill(h.won?"p-green":"p-red",h.won?"+"+h.wonBB+"bb":"lost");
+  html+="</div><pre style=\"background:#f8f8f8;padding:.875rem;border-radius:8px;border:0.5px solid #e0e0e0;max-height:180px;overflow-y:auto;color:#666\">"+escH(h.raw.trim())+"</pre>";
+  html+="<div style=\"margin-top:.875rem\"><button class=\"btn\" onclick=\"analyzeHand('"+id+"')\">&#10024; AI analysis &#8599;</button></div>";
+  html+="<div id=\"oai-"+sid+"\" style=\"margin-top:.75rem\"></div>";
+  $e("hh-hdi").innerHTML=html;
+  sec.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+// ============================================================
+// SECTION: AI — HH
+// ============================================================
+async function analyzeHand(id) {
+  var h=HH.find(function(x){return x.id===id;}); if(!h) return;
+  var sid=id.replace(/[^a-z0-9]/gi,"_"), el=$e("oai-"+sid);
+  el.innerHTML="<span class=\"spinner\"></span>Analyzing...";
+  var ctx=h.stage==="rush"?"RUSH (5-max fast-fold).":"FINAL TABLE (9-max Mystery Bounty).";
+  try{
+    var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,messages:[{role:"user",content:"You are MBR $1 GGPoker trainer. "+ctx+" Level "+h.lvl+" (BB="+h.bb+"), stack "+h.stackBB+"bb, hand "+h.normCards+".\nAnalysis: 1) Preflop decision 2) Postflop 3) Optimal line. Language: Ukrainian.\n\n"+h.raw}]})});
+    var d=await r.json();
+    el.innerHTML="<div class=\"aio\">"+fmt(d.content&&d.content.map(function(c){return c.text||"";}).join("")||"Error")+"</div>";
+  } catch(e){el.innerHTML="<div class=\"alert a-err\">"+e.message+"</div>";}
+}
+
+async function hhAsk(q) {
+  hhTab("ai",document.querySelectorAll("#hh-stabs .st")[7]);
+  var el=$e("hh-ai-r"); el.innerHTML="<span class=\"spinner\"></span>Analyzing...";
+  var hands=filteredHH(); var s=calcHH(hands);
+  var sys="You are MBR $1 GGPoker trainer. RUSH: 5-max, VPIP 22-32%, PFR 18-26%, 3bet 6-10%, CBet 50-65%. FINAL: 9-max Bounty, TOP3 $4/$3/$2, push/fold <15bb.";
+  var ctx="Hero | "+s.n+" hands | Rush:"+s.rushS.n+" Final:"+s.finalS.n+"\nRUSH: VPIP "+s.rushS.vpP+"% PFR "+s.rushS.pfP+"% 3bet "+s.rushS.tbP+"% CBet "+s.rushS.cbP+"%\nFINAL: VPIP "+s.finalS.vpP+"% PFR "+s.finalS.pfP+"% 3bet "+s.finalS.tbP+"%\nHH:\n"+HHtext.substring(0,5000);
+  try{
+    var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:sys+"\n\n"+q+"\n\nData:\n"+ctx+"\n\nLanguage: Ukrainian."}]})});
+    var d=await r.json();
+    var txt=d.content&&d.content.map(function(c){return c.text||"";}).join("")||"Error";
+    el.innerHTML="<div class=\"aio\">"+fmt(txt)+"</div>";
+    saveHist("hh",q,fmt(txt));
+  } catch(e){el.innerHTML="<div class=\"alert a-err\">"+e.message+"</div>";}
+}
+function hhAskCustom() { var q=$e("hh-q").value.trim(); if(q){hhAsk(q); $e("hh-q").value="";} }
+
+// ============================================================
+// SECTION: RENDER — RESULTS STATS
+// ============================================================
+function doRes() { if(!allRT.length) return; buildMonthFilter(allRT); $e("R-up").style.display="none"; $e("R-res").style.display="block"; refreshResStats(); }
+
+// ============================================================
+// SECTION: BOUNTY CALC
+// ============================================================
+function countKOFromBounty(RT) {
+  var koByTour={};
+  for(var i=0;i<HH.length;i++){
+    var h=HH[i];
+    if(!h.knockout||h.stage!=="final") continue;
+    if(!koByTour[h.tid]) koByTour[h.tid]=0;
+    koByTour[h.tid]++;
+  }
+  var nko=0;
+  for(var i=0;i<RT.length;i++){
+    var t=RT[i];
+    if(t.bountyEarned<=0) continue;
+    nko+=koByTour[t.id]||0;
+  }
+  return nko;
+}
+
+function findBountyCombos(cents,k) {
+  var combos=[], seen=new Set();
+  function go(rem,left,cur,minI){
+    if(left===0){if(rem===0){var key=cur.join(",");if(!seen.has(key)){seen.add(key);combos.push(cur.slice());}}}
+    else{for(var i=minI;i<TIERS.length;i++){if(TIERS[i]<=rem){cur.push(TIERS[i]);go(rem-TIERS[i],left-1,cur,i);cur.pop();}}}
+  }
+  go(cents,k,[],0);
+  return combos;
+}
+
+function refreshResStats() {
+  var RT=filteredRT();
+  if(!RT.length){$e("res-rtitle").textContent="No data"; $e("res-sg").innerHTML=""; $e("res-ov-c").innerHTML=""; return;}
+  var total=RT.length, itm=RT.filter(function(t){return t.itm;}).length, madeFT=RT.filter(function(t){return t.madeFT;}).length;
+  var invested=RT.reduce(function(s,t){return s+t.buyin+t.rake+t.bountyPool;},0);
+  var prize=RT.reduce(function(s,t){return s+t.prize;},0);
+  var fixedTotal=RT.reduce(function(s,t){return s+t.fixedPrize;},0);
+  var bountyTotal=RT.reduce(function(s,t){return s+t.bountyEarned;},0);
+  var profit=prize-invested, roi=invested>0?Math.round(profit/invested*100):0;
+  var itmP=Math.round(itm/total*100), ftP=Math.round(madeFT/total*100);
+  var ftConv=madeFT>0?Math.round(itm/madeFT*100):0;
+  $e("res-rtitle").textContent=cfg().label+" - Tournament Stats";
+  $e("res-rsub").textContent=total+" tournaments";
+  updateFilterCount();
+  $e("res-sg").innerHTML=
+    "<div class=\"sc\"><div class=\"sc-l\">Tournaments</div><div class=\"sc-v c-blue\">"+total+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">FT rate</div><div class=\"sc-v "+(ftP>=45?"c-green":"c-amber")+"\">"+ftP+"%</div><div class=\"sc-s\">exp~50%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">ITM (TOP 3)</div><div class=\"sc-v "+(itmP>=15?"c-green":"c-red")+"\">"+itmP+"%</div><div class=\"sc-s\">exp~16.7%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">ROI</div><div class=\"sc-v "+(roi>=0?"c-green":"c-red")+"\">"+(roi>=0?"+":"")+roi+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Profit</div><div class=\"sc-v "+(profit>=0?"c-green":"c-red")+"\">"+(profit>=0?"+":"")+profit.toFixed(2)+"$</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Bounty</div><div class=\"sc-v c-green\">$"+bountyTotal.toFixed(2)+"</div></div>";
+
+  var places={};
+  for(var i=0;i<RT.length;i++){var pp=RT[i].place>0?RT[i].place:99; places[pp]=(places[pp]||0)+1;}
+  var best=RT.filter(function(t){return t.itm;}).sort(function(a,b){return b.prize-a.prize;}).slice(0,4);
+  var placedT=RT.filter(function(t){return t.place>0;});
+  var avgPl=placedT.length?(placedT.reduce(function(s,t){return s+t.place;},0)/placedT.length).toFixed(1):"--";
+
+  var placeRows="";
+  [1,2,3,4,5,6,7,8,9].forEach(function(i){
+    var v=places[i]||0, pct=total>0?Math.round(v/total*100):0, col=i<=3?"#185FA5":"#639922";
+    placeRows+="<div class=\"br\"><div class=\"bl\">"+i+" "+(i<=3?"&#128176;":"")+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+pct+"%;background:"+col+"\"></div></div><div class=\"bv\">"+v+"x</div><div class=\"be\">"+pct+"%</div></div>";
+  });
+  if(places[99]) placeRows+="<div class=\"br\"><div class=\"bl\">Rush bust</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+Math.round(places[99]/total*100)+"%;background:#A32D2D\"></div></div><div class=\"bv\">"+places[99]+"x</div><div class=\"be\">"+Math.round(places[99]/total*100)+"%</div></div>";
+
+  var bestHtml=best.map(function(t){return sr(pill("p-blue",t.place+"°")+" #"+t.id,"<span class=\"c-green\">+$"+(t.prize-t.buyin-t.rake-t.bountyPool).toFixed(2)+"</span>");}).join("");
+
+  $e("res-ov-c").innerHTML=
+    "<div class=\"two-col\" style=\"margin-bottom:1rem\"><div><div class=\"sec-l\">Financial summary</div>"+
+    sr("Invested","$"+invested.toFixed(2))+
+    sr("Fixed prizes","<span class=\"c-blue\">$"+fixedTotal.toFixed(2)+"</span>")+
+    sr("Mystery Bounty","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
+    sr("Total won","$"+prize.toFixed(2))+
+    sr("Net profit","<span class=\""+(profit>=0?"c-green":"c-red")+"\">"+(profit>=0?"+":"")+profit.toFixed(2)+"$</span>")+
+    sr("ROI","<span class=\""+(roi>=0?"c-green":"c-red")+"\">"+(roi>=0?"+":"")+roi+"%</span>")+
+    sr("Avg place",avgPl)+
+    "</div><div><div class=\"sec-l\">Top wins</div>"+(bestHtml||"<p style=\"color:#666\">No ITM</p>")+
+    "<div class=\"div\"></div><div class=\"sec-l\">FT</div>"+
+    sr("FT rate",ftP+"% <span style=\"font-size:11px;color:#999\">(exp 50%)</span>")+
+    sr("FT-TOP3",ftConv+"% <span style=\"font-size:11px;color:#999\">(norm 30-35%)</span>")+
+    "</div></div><div class=\"div\"></div><div class=\"sec-l\">Place distribution</div>"+placeRows;
+
+  $e("res-ft-c").innerHTML=
+    "<div class=\"alert a-amber\" style=\"font-size:12px;margin-bottom:1rem\">Knockout = Mystery Bounty envelope. Fixed: <strong>1&deg;$"+cfg().fixedPrizes[1]+" &middot; 2&deg;$"+cfg().fixedPrizes[2]+" &middot; 3&deg;$"+cfg().fixedPrizes[3]+"</strong>.</div>"+
+    "<div class=\"two-col\"><div><div class=\"sec-l\">FT stats</div>"+
+    sr("FT appearances",madeFT+"/"+total+" ("+ftP+"%)") +
+    sr("TOP3 from FT",itm+" ("+ftConv+"%)") +
+    sr("Bounty earned","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
+    sr("Fixed prizes","<span class=\"c-blue\">$"+fixedTotal.toFixed(2)+"</span>")+
+    "</div><div><div class=\"sec-l\">MBR $1 payouts</div>"+
+    "<div style=\"font-size:13px;line-height:2.2;color:#666\">"+
+    "<div>"+pill("p-blue","1&deg; $4.00")+" + bounties</div>"+
+    "<div>"+pill("p-gray","2&deg; $3.00")+" + bounties</div>"+
+    "<div>"+pill("p-gray","3&deg; $2.00")+" + bounties</div>"+
+    "<div style=\"font-size:12px;color:#999\">4-9 bounty only</div>"+
+    "</div></div></div>";
+
+  var koByTour2={};
+  for(var i=0;i<HH.length;i++){
+    var h=HH[i];
+    if(!h.knockout||h.stage!=="final") continue;
+    if(!koByTour2[h.tid]) koByTour2[h.tid]=0;
+    koByTour2[h.tid]++;
+  }
+
+  var nko=countKOFromBounty(RT);
+
+  var tierCounts={}, extendedTourCount=0, EXT_MAX=8;
+  for(var ti=0;ti<RT.length;ti++){
+    var t=RT[ti];
+    if(t.bountyEarned<=0) continue;
+    var tko=koByTour2[t.id];
+    if(!tko) continue;
+    var cents=Math.round(t.bountyEarned*100);
+    if(cents%25!==0) cents=Math.round(cents/25)*25;
+    if(cents<=0) continue;
+    var combos=findBountyCombos(cents,tko);
+    if(!combos.length){
+      // HH heuristic likely undercounted real eliminations — try more knockouts than detected
+      for(var extra=1;extra<=EXT_MAX&&!combos.length;extra++) combos=findBountyCombos(cents,tko+extra);
+      if(combos.length) extendedTourCount++;
+    }
+    if(combos.length>=1){
+      var allVals={};
+      for(var ci=0;ci<combos[0].length;ci++){var cv=combos[0][ci];allVals[cv]=(allVals[cv]||0)+1;}
+      for(var cj=1;cj<combos.length;cj++){
+        var comboVals={};
+        for(var ci=0;ci<combos[cj].length;ci++){var cv2=combos[cj][ci];comboVals[cv2]=(comboVals[cv2]||0)+1;}
+        for(var key in allVals){allVals[key]=Math.min(allVals[key],comboVals[key]||0);}
+      }
+      for(var key in allVals){if(allVals[key]>0)tierCounts[key]=(tierCounts[key]||0)+allVals[key];}
+    }
+  }
+
+  var expTotal=BOUNTY_DIST.reduce(function(s,d){return s+(d.val*d.prob*nko);},0);
+  var deviation=bountyTotal-expTotal;
+  var deviationPct=expTotal>0?Math.round(deviation/expTotal*100):0;
+
+  var confirmedTotal=0, confirmedEarned=0;
+  var distRows="";
+  for(var di=0;di<BOUNTY_DIST.length;di++){
+    var d=BOUNTY_DIST[di];
+    var ck=Math.round(d.val*100);
+    var conf=tierCounts[ck]||0;
+    var confEarned=parseFloat((conf*d.val).toFixed(2));
+    confirmedTotal+=conf; confirmedEarned+=confEarned;
+    var exp=parseFloat((d.prob*nko).toFixed(1));
+    var expV=parseFloat((d.val*d.prob*nko).toFixed(2));
+    distRows+="<tr><td><strong>"+d.label+"</strong></td><td>"+(d.prob*100).toFixed(4)+"%</td>";
+    distRows+="<td>"+(conf>0?"<strong style=\"color:#0F6E56\">"+conf+"&times;</strong>":"&mdash;")+"</td>";
+    distRows+="<td>"+(conf>0?"<strong style=\"color:#0F6E56\">$"+confEarned.toFixed(2)+"</strong>":"&mdash;")+"</td>";
+    distRows+="<td style=\"color:#999\">"+exp+"&times; / $"+expV+"</td></tr>";
+  }
+  distRows+="<tr style=\"border-top:1px solid #ccc\"><td><strong>Total</strong></td><td>&mdash;</td>";
+  distRows+="<td><strong style=\"color:#0F6E56\">"+confirmedTotal+"&times;</strong></td>";
+  distRows+="<td><strong style=\"color:#0F6E56\">$"+confirmedEarned.toFixed(2)+"</strong></td>";
+  distRows+="<td style=\"color:#999\">"+nko+"&times; / $"+expTotal.toFixed(2)+"</td></tr>";
+
+  var byMonth={};
+  for(var ri=0;ri<RT.length;ri++){
+    var t=RT[ri]; var mk=getMonthKey(t.date);
+    if(!byMonth[mk]) byMonth[mk]={bounty:0,tours:0};
+    byMonth[mk].tours++;
+    if(t.bountyEarned>0) byMonth[mk].bounty+=t.bountyEarned;
+  }
+  var monthKeys=Object.keys(byMonth).sort();
+  var monthRows="";
+  for(var mi=0;mi<monthKeys.length;mi++){
+    var mk=monthKeys[mi], mv=byMonth[mk];
+    var mko=0;
+    for(var ri2=0;ri2<RT.length;ri2++){if(getMonthKey(RT[ri2].date)===mk) mko+=koByTour2[RT[ri2].id]||0;}
+    monthRows+="<tr><td>"+monthLabel(mk)+"</td><td>"+mv.tours+"</td><td class=\"c-green\">$"+mv.bounty.toFixed(2)+"</td><td>"+mko+"</td></tr>";
+  }
+
+  $e("res-bounty-c").innerHTML=
+    "<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:1rem\">Bounty Pool = 18 &times; $0.42 = <strong>$7.56</strong> &middot; 9 envelopes on FT &middot; <strong>Avg EV = $0.9450</strong>. Knockouts from Hand History only.</div>"+
+    "<div class=\"two-col\" style=\"margin-bottom:1rem\"><div><div class=\"sec-l\">Bounty stats</div>"+
+    sr("Total bounty","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
+    sr("Tournaments with bounty",RT.filter(function(t){return t.bountyEarned>0;}).length)+
+    sr("Knockouts (HH)",nko)+
+    sr("Confirmed knockouts","<span class=\"c-green\">"+confirmedTotal+" = $"+confirmedEarned.toFixed(2)+"</span>")+
+    sr("Avg bounty / KO",nko>0?"$"+(bountyTotal/nko).toFixed(2):"&mdash;")+
+    "</div><div><div class=\"sec-l\">EV comparison</div>"+
+    sr("Actual bounty","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
+    sr("Expected ("+nko+" &times; $0.945)",nko>0?"$"+expTotal.toFixed(2):"&mdash;")+
+    sr("Deviation",nko>0?"<span class=\""+(deviation>=0?"c-green":"c-amber")+"\">"+(deviation>=0?"+":"")+"$"+deviation.toFixed(2)+" ("+(deviationPct>0?"+":"")+deviationPct+"%)</span>":"&mdash;")+
+    "<div style=\"font-size:11px;color:#666;margin-top:.4rem\">Need 500+ knockouts for significance.</div>"+
+    "</div></div>"+
+    "<div class=\"div\"></div><div class=\"sec-l\">Distribution by value ("+nko+" KO)</div>"+
+    "<div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:480px;margin-bottom:1rem\">"+
+    "<thead><tr><th>Value</th><th>Probability</th><th>Confirmed</th><th>Confirmed earned</th><th>Expected</th></tr></thead>"+
+    "<tbody>"+distRows+"</tbody></table></div>"+
+    (monthRows?"<div class=\"div\"></div><div class=\"sec-l\">Bounty by month</div><table class=\"btable\"><thead><tr><th>Month</th><th>Tournaments</th><th>Bounty</th><th>KO (HH)</th></tr></thead><tbody>"+monthRows+"</tbody></table>":"")+
+    "<div class=\"div\"></div><p style=\"font-size:12px;color:#666\"><strong>Confirmed</strong> - only mathematically possible combination"+(extendedTourCount>0?" (for "+extendedTourCount+" tournament(s) HH under-detected eliminations, so more knockouts than found in Hand History were assumed to make the math work)":"")+".</p>";
+
+  renderRL();
+
+  var months2={};
+  for(var ri3=0;ri3<RT.length;ri3++){
+    var t=RT[ri3]; if(!t.date) continue;
+    var mk2=getMonthKey(t.date);
+    if(!months2[mk2]) months2[mk2]={n:0,itm:0,ft:0,inv:0,prize:0};
+    months2[mk2].n++; if(t.itm)months2[mk2].itm++; if(t.madeFT)months2[mk2].ft++;
+    months2[mk2].inv+=t.buyin+t.rake+t.bountyPool; months2[mk2].prize+=t.prize;
+  }
+  var mK=Object.keys(months2).sort();
+  var roiRows="";
+  for(var mi2=0;mi2<mK.length;mi2++){
+    var mk3=mK[mi2], mv2=months2[mk3];
+    var mp=mv2.prize-mv2.inv, r2=mv2.inv?Math.round(mp/mv2.inv*100):0;
+    roiRows+="<div class=\"br\" style=\"margin-bottom:6px\"><div class=\"bl\">"+monthLabel(mk3)+"</div>";
+    roiRows+="<div class=\"bt\"><div class=\"bf\" style=\"width:"+Math.min(Math.abs(r2),100)+"%;background:"+(r2>=0?"#0F6E56":"#A32D2D")+"\"></div></div>";
+    roiRows+="<div class=\"bv\" style=\"color:"+(r2>=0?"#0F6E56":"#A32D2D")+"\">"+(mp>=0?"+":"")+mp.toFixed(1)+"$</div>";
+    roiRows+="<div class=\"be\">ROI"+(r2>0?"+":"")+r2+"%</div>";
+    roiRows+="<div style=\"font-size:10px;color:#666;font-family:monospace;width:110px;text-align:right\">ITM"+Math.round(mv2.itm/mv2.n*100)+"%&middot;"+mv2.n+"t</div></div>";
+  }
+  $e("res-roi-c").innerHTML=(roiRows?"<p style=\"font-size:12px;color:#666;margin-bottom:.875rem\">Profit by month.</p>"+roiRows:"<p style=\"color:#666\">No dates</p>")+
+    "<div class=\"div\"></div><div style=\"font-size:14px;color:#666\">Total: <strong style=\"font-size:20px;color:"+(profit>=0?"#0F6E56":"#A32D2D")+"\">"+(profit>=0?"+":"")+profit.toFixed(2)+"$</strong> &middot; ROI <strong style=\"color:"+(roi>=0?"#0F6E56":"#A32D2D")+"\">"+(roi>=0?"+":"")+roi+"%</strong></div>";
+}
+
+// ============================================================
+// SECTION: RENDER — TOURNAMENT LIST
+// ============================================================
+function renderRL() {
+  var RT=filteredRT(), rf=$e("rfR").value, rs=$e("rfS").value;
+  var fil=RT.filter(function(t){
+    if(rf==="itm"&&!t.itm) return false;
+    if(rf==="ft"&&(t.itm||!t.madeFT)) return false;
+    if(rf==="miss"&&t.madeFT) return false;
+    return true;
+  });
+  if(rs==="place") fil.sort(function(a,b){return (a.place||99)-(b.place||99);});
+  else if(rs==="prize") fil.sort(function(a,b){return b.prize-a.prize;});
+  else fil.sort(function(a,b){return b.date-a.date;});
+
+  var koByTour={};
+  for(var i=0;i<HH.length;i++){
+    var h=HH[i];
+    if(!h.knockout||h.stage!=="final") continue;
+    if(!koByTour[h.tid]) koByTour[h.tid]=0;
+    koByTour[h.tid]++;
+  }
+
+  var show=fil.slice(0,200);
+  $e("res-tcnt").textContent="("+show.length+" / "+fil.length+")";
+  var html="";
+  for(var i=0;i<show.length;i++){
+    var t=show[i];
+    var net=t.prize-t.buyin-t.rake-t.bountyPool;
+    var ko=koByTour[t.id]||0;
+    var placeLabel=t.place?(t.place+"° "+(t.itm?"TOP3":t.madeFT?"FT":"")):"Rush bust";
+    var placeCls=t.itm?"p-blue":t.madeFT?"p-green":"p-gray";
+    var rowCls="ti"+(t.itm?" itm":t.madeFT?" ft":"");
+    var dateStr=t.date?new Date(t.date).toLocaleDateString():"--";
+    var koHtml="";
+    if(HH.length>0){
+      koHtml=ko>0
+        ?"<span style=\"font-size:11px;color:#0F6E56;font-family:monospace;margin-left:6px\">&#128176;"+ko+"KO</span>"
+        :"<span style=\"font-size:11px;color:#ccc;font-family:monospace;margin-left:6px\">0KO</span>";
+    }
+    html+="<div class=\""+rowCls+"\">";
+    html+="<div>";
+    html+="<div style=\"font-size:12px;font-weight:500\">#"+t.id+" "+pill(placeCls,placeLabel)+koHtml+"</div>";
+    html+="<div style=\"font-size:11px;color:#666;font-family:monospace;margin-top:1px\">"+dateStr+" &middot; $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div>";
+    html+="</div>";
+    html+="<div style=\"text-align:right;flex-shrink:0\">";
+    if(t.fixedPrize>0) html+="<div style=\"font-size:11px;color:#185FA5;font-family:monospace\">fixed +$"+t.fixedPrize.toFixed(2)+"</div>";
+    if(t.bountyEarned>0) html+="<div style=\"font-size:11px;color:#0F6E56;font-family:monospace\">bounty +$"+t.bountyEarned.toFixed(2)+"</div>";
+    html+="<div class=\""+(net>=0?"hw":"hl")+"\" style=\"font-size:12px;font-family:monospace\">"+(net>=0?"+":"")+net.toFixed(2)+"$</div>";
+    html+="</div></div>";
+  }
+  $e("res-tl").innerHTML=html;
+}
+
+// ============================================================
+// SECTION: AI — RESULTS
+// ============================================================
+async function resAsk(q) {
+  resTab("ai",document.querySelectorAll("#res-stabs .st")[5]);
+  var RT=filteredRT(), el=$e("res-ai-r");
+  el.innerHTML="<span class=\"spinner\"></span>Analyzing...";
+  var total=RT.length, itm=RT.filter(function(t){return t.itm;}).length, madeFT=RT.filter(function(t){return t.madeFT;}).length;
+  var inv=RT.reduce(function(s,t){return s+t.buyin+t.rake+t.bountyPool;},0);
+  var prize=RT.reduce(function(s,t){return s+t.prize;},0);
+  var bountyTotal=RT.reduce(function(s,t){return s+t.bountyEarned;},0);
+  var roi=inv>0?Math.round((prize-inv)/inv*100):0;
+  var fixedTotal2=RT.reduce(function(s,t){return s+t.fixedPrize;},0);
+  var profit2=prize-inv;
+  var ctx="Tournaments: "+total+" | Invested: $"+inv.toFixed(2)+" | Total won: $"+prize.toFixed(2)+" (Fixed: $"+fixedTotal2.toFixed(2)+" + Bounty: $"+bountyTotal.toFixed(2)+") | Net profit: $"+profit2.toFixed(2)+"\nFT rate: "+Math.round(madeFT/total*100)+"% | ITM: "+Math.round(itm/total*100)+"% | ROI: "+roi+"% (net profit / invested)";
+  var cfgNow=cfg(); var sys="You are "+cfgNow.label+" GGPoker analyst. Rush 5-max to FT 9-max Mystery Bounty. Fixed: 1st $"+cfgNow.fixedPrizes[1]+", 2nd $"+cfgNow.fixedPrizes[2]+", 3rd $"+cfgNow.fixedPrizes[3]+". Avg bounty $"+cfgNow.avgBountyEV+".";
+  try{
+    var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:sys+"\n\n"+q+"\n\nData:\n"+ctx+"\n\nLanguage: Ukrainian."}]})});
+    var d=await r.json();
+    var txt=d.content&&d.content.map(function(c){return c.text||"";}).join("")||"Error";
+    el.innerHTML="<div class=\"aio\">"+fmt(txt)+"</div>";
+    saveHist("res",q,fmt(txt));
+  } catch(e){el.innerHTML="<div class=\"alert a-err\">"+e.message+"</div>";}
+}
+function resAskCustom() { var q=$e("res-q").value.trim(); if(q){resAsk(q); $e("res-q").value="";} }
+
+// ============================================================
+// SECTION: UI HELPERS
+// ============================================================
+function hhTab(n,b) {
+  document.querySelectorAll("#hh-stabs .st").forEach(function(t){t.classList.remove("on");});
+  ["ov","rush","final","pos","hands","cards","weak","ranges","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
+  if(b) b.classList.add("on");
+  var el=$e("hhT-"+n); if(el) el.style.display="block";
+  if(n==="ranges") renderRangeChart();
+}
+function resTab(n,b) {
+  document.querySelectorAll("#res-stabs .st").forEach(function(t){t.classList.remove("on");});
+  ["ov","ft","bounty","list","roi","chart","ai"].forEach(function(x){var el=$e("rT-"+x);if(el)el.style.display="none";});
+  if(b) b.classList.add("on");
+  var el=$e("rT-"+n); if(el) el.style.display="block";
+  if(n==="chart") setTimeout(renderChart,50);
+}
+
+
+// ============================================================
+// SECTION: CHART
+// ============================================================
+var chartCum=null, chartRoi=null, chartPlace=null;
+
+function destroyChart(c){if(c){try{c.destroy();}catch(e){}} return null;}
+
+function renderChart() {
+  renderChartCum();
+  renderChartRoi();
+  renderChartPlace();
+}
+
+function renderChartCum() {
+  var RT=allRT.filter(function(t){return t.date>0;});
+  RT.sort(function(a,b){return a.date-b.date;});
+  var canvas=document.getElementById("chart-cum-canvas");
+  if(!canvas||!RT.length) return;
+  var labels=[],data=[],running=0;
+  for(var i=0;i<RT.length;i++){
+    var tCost=RT[i].buyin+RT[i].rake+RT[i].bountyPool;
+    running+=RT[i].prize-tCost;
+    labels.push(i+1);
+    data.push(parseFloat(running.toFixed(2)));
+  }
+  chartCum=destroyChart(chartCum);
+  chartCum=new Chart(canvas.getContext("2d"),{
+    type:"line",
+    data:{labels:labels,datasets:[{
+      label:"Cumulative profit ($)",data:data,
+      backgroundColor:"rgba(24,95,165,0.12)",borderColor:"#185FA5",
+      borderWidth:2,fill:true,
+      pointRadius:RT.length>200?0:2,pointHoverRadius:4,tension:0.3
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:function(it){return "Tournament #"+it[0].label;},
+        label:function(it){return (it.raw>=0?"+":"")+it.raw.toFixed(2)+"$";}
+      }}},
+      scales:{
+        x:{title:{display:true,text:"Tournament #",font:{size:11},color:"#999"},ticks:{maxTicksLimit:12,font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.04)"}},
+        y:{title:{display:true,text:"Cumulative profit ($)",font:{size:11},color:"#999"},ticks:{font:{size:10},color:"#999",callback:function(v){return (v>=0?"+":"")+v+"$";}},grid:{color:"rgba(0,0,0,0.06)"}}
+      }
+    }
+  });
+}
+
+function renderChartRoi() {
+  var canvas=document.getElementById("chart-roi-canvas");
+  if(!canvas) return;
+  var months={};
+  for(var i=0;i<allRT.length;i++){
+    var t=allRT[i]; if(!t.date) continue;
+    var mk=getMonthKey(t.date);
+    if(!months[mk]) months[mk]={inv:0,prize:0};
+    months[mk].inv+=t.buyin+t.rake+t.bountyPool; months[mk].prize+=t.prize;
+  }
+  var keys=Object.keys(months).sort();
+  if(!keys.length) return;
+  var labels=keys.map(function(k){return monthLabel(k);});
+  var data=keys.map(function(k){
+    var m=months[k];
+    return m.inv>0?parseFloat(((m.prize-m.inv)/m.inv*100).toFixed(1)):0;
+  });
+  var colors=data.map(function(v){return v>=0?"rgba(15,110,86,0.75)":"rgba(163,45,45,0.75)";});
+  var borderColors=data.map(function(v){return v>=0?"#0F6E56":"#A32D2D";});
+  chartRoi=destroyChart(chartRoi);
+  chartRoi=new Chart(canvas.getContext("2d"),{
+    type:"bar",
+    data:{labels:labels,datasets:[{
+      label:"ROI (%)",data:data,
+      backgroundColor:colors,borderColor:borderColors,borderWidth:1
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:function(it){return (it.raw>=0?"+":"")+it.raw.toFixed(1)+"%";}
+      }}},
+      scales:{
+        x:{ticks:{font:{size:10},color:"#999"},grid:{display:false}},
+        y:{title:{display:true,text:"ROI (%)",font:{size:11},color:"#999"},
+          ticks:{font:{size:10},color:"#999",callback:function(v){return v+"%";}},
+          grid:{color:"rgba(0,0,0,0.06)"},
+          afterDataLimits:function(s){var mx=Math.max(Math.abs(s.max),Math.abs(s.min));s.max=mx*1.15;s.min=-mx*0.3;}
+        }
+      }
+    }
+  });
+}
+
+function renderChartPlace() {
+  var canvas=document.getElementById("chart-place-canvas");
+  if(!canvas) return;
+  var dist={};
+  for(var i=1;i<=18;i++) dist[i]=0;
+  for(var i=0;i<allRT.length;i++){
+    var p=allRT[i].place;
+    if(p>=1&&p<=18) dist[p]++;
+  }
+  var maxPlace=18;
+  for(var p=18;p>=1;p--){if(dist[p]>0){maxPlace=p;break;}}
+  var labels=[],data=[],colors=[];
+  for(var i=1;i<=maxPlace;i++){
+    labels.push(i+"th");
+    data.push(dist[i]);
+    colors.push(i===1?"rgba(24,95,165,0.85)":i<=3?"rgba(15,110,86,0.75)":i<=9?"rgba(24,95,165,0.35)":"rgba(150,150,150,0.4)");
+  }
+  chartPlace=destroyChart(chartPlace);
+  chartPlace=new Chart(canvas.getContext("2d"),{
+    type:"bar",
+    data:{labels:labels,datasets:[{
+      label:"Count",data:data,
+      backgroundColor:colors,borderWidth:0,borderRadius:3
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:function(it){return "Place: "+it[0].label;},
+          label:function(it){return it.raw+" tournaments";}
+        }}
+      },
+      scales:{
+        x:{ticks:{font:{size:10},color:"#999"},grid:{display:false}},
+        y:{title:{display:true,text:"Count",font:{size:11},color:"#999"},
+          ticks:{font:{size:10},color:"#999",precision:0},
+          grid:{color:"rgba(0,0,0,0.06)"}
+        }
+      }
+    }
+  });
+}
+
+function resetHH() {
+  $e("HH-up").style.display="block"; $e("HH-res").style.display="none";
+  HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();allHHMonths={};
+  $e("hh-pf").style.width="0"; $e("hh-pw").style.display="none";
+  $e("hh-chips").innerHTML=""; $e("hh-cnt").textContent="";
+  $e("hh-go").disabled=true; $e("hh-merge").style.display="none";
+}
+function resetRes() {
+  $e("R-up").style.display="block"; $e("R-res").style.display="none";
+  $e("res-chips").innerHTML="";
+  $e("res-cnt").textContent=allRT.length?allRT.length+" tournaments":"";
+  $e("res-go").disabled=allRT.length===0;
+}
+function hhDemo() {
+  var txt="Poker Hand #BR1133665341: Tournament #285710636, Mystery Battle Royale $1 Hold'em No Limit - Level12(400/800(160)) - 2026/05/17 22:51:53\nTable '2' 9-max Seat #9 is the button\nSeat 1: ac2cf6bc (5,768 in chips)\nSeat 5: e16982b4 (5,714 in chips)\nSeat 9: Hero (6,518 in chips)\nac2cf6bc: posts the ante 160\ne16982b4: posts the ante 160\nHero: posts the ante 160\nac2cf6bc: posts small blind 400\ne16982b4: posts big blind 800\n*** HOLE CARDS ***\nDealt to Hero [Ts Kc]\nHero: raises 800 to 1,600\nac2cf6bc: folds\ne16982b4: calls 800\n*** FLOP *** [Ad 3c Td]\ne16982b4: checks\nHero: bets 1,347\ne16982b4: raises 2,607 to 3,954 and is all-in\nHero: calls 2,607\n*** TURN *** [Ad 3c Td] [2c]\n*** RIVER *** [Ad 3c Td 2c] [4d]\n*** SHOWDOWN ***\ne16982b4 collected 11,988 from pot\n*** SUMMARY ***\nTotal pot 11,988 | Rake 0\nBoard [Ad 3c Td 2c 4d]\nSeat 5: e16982b4 (big blind) showed [Ac 7c] and won (11,988) with a pair of Aces\nSeat 9: Hero (button) showed [Ts Kc] and lost with a pair of Tens";
+  HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();allHHMonths={};$e("hh-chips").innerHTML="";
+  parseGG(txt,"demo.txt"); HHraw=[txt]; HHtext=txt;
+  setP("hh",100,"Demo","Found "+HH.length);
+  $e("hh-cnt").textContent=HH.length+" hands (demo)";
+  $e("hh-go").disabled=false; clearErr("hh"); addChip("hh","demo.txt","ok");
+}
+function resDemo() {
+  var d=[
+    {id:"282006310",place:5,prize:1.25,date:"2026/05/01"},
+    {id:"282100001",place:12,prize:0,date:"2026/05/03"},
+    {id:"282200002",place:2,prize:5.50,date:"2026/05/05"},
+    {id:"282300003",place:8,prize:0.75,date:"2026/04/07"},
+    {id:"282400004",place:3,prize:3.25,date:"2026/04/10"},
+    {id:"282500005",place:15,prize:0,date:"2026/04/12"},
+    {id:"282600006",place:1,prize:16.50,date:"2026/03/14"},
+    {id:"282700007",place:6,prize:0.50,date:"2026/03/15"}
+  ];
+  $e("res-chips").innerHTML="";
+  for(var i=0;i<d.length;i++){
+    var x=d[i];
+    if(allRT.find(function(r){return r.id===x.id;})) continue;
+    var ds=x.date.replace(/(\d{4})\/(\d{2})\/(\d{2})/,"$1-$2-$3");
+    var c2=cfg(); var t={id:x.id,name:c2.label,buyin:c2.buyin,rake:c2.rake,bountyPool:c2.bountyPool,players:18,pool:0,
+      date:new Date(ds).getTime(),place:x.place,prize:x.prize,itm:x.place<=3&&x.prize>0,
+      madeFT:x.place>0&&x.place<=9,fname:"demo.txt"};
+    t.fixedPrize=FIXED_PRIZES[x.place]||0;
+    t.bountyEarned=Math.max(0,parseFloat((x.prize-t.fixedPrize).toFixed(2)));
+    allRT.push(t);
+  }
+  allRT.sort(function(a,b){return b.date-a.date;});
+  updateStoredNotice();
+  setP("res",100,"Demo",allRT.length+" tournaments");
+  $e("res-cnt").textContent=allRT.length+" tournaments";
+  $e("res-go").disabled=false; clearErr("res"); addChip("res","demo.txt","ok");
+}
+
+function fmt(t) {
+  t=t.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+  t=t.replace(/^#{1,3} (.+)$/gm,function(m,p1){return "<h3>"+p1+"</h3>";});
+  t=t.replace(/^[*\-] (.+)$/gm,function(m,p1){return "<li>"+p1+"</li>";});
+  t=t.replace(/(<li>[\s\S]*?<\/li>)+/g,function(m){return "<ul>"+m+"</ul>";});
+  t=t.replace(/\n\n/g,"<br><br>");
+  t=t.replace(/\n/g,"<br>");
+  return t;
+}
+</script>
+
+
+</body></html>
