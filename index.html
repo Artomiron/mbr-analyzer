@@ -115,7 +115,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
 
 <div id="M-hh" style="display: none;">
   <div id="HH-up" style="display: block;">
-    <div class="alert a-info">Load <strong>.zip</strong> or <strong>.txt</strong> Hand History files from GGPoker MBR.</div>
+    <div class="alert a-info">Load <strong>.zip</strong> or <strong>.txt</strong> Hand History files from GGPoker MBR. New files are added to already loaded hands (duplicates are skipped).</div>
     <div class="drop" id="hh-drop"><input type="file" id="hh-inp" accept=".zip,.txt,.log" multiple="">
       <div style="font-size:28px;margin-bottom:.5rem;color:#999">☁</div>
       <h3>Drop or click to select</h3>
@@ -134,7 +134,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
   <div id="HH-res" style="display: none;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
       <div><div style="font-size:18px;font-weight:500" id="hh-rtitle"></div><div style="font-size:12px;color:#666;font-family:monospace;margin-top:2px" id="hh-rsub"></div></div>
-      <button class="btn" onclick="resetHH()">← Back</button>
+      <div style="display:flex;gap:6px"><button class="btn" onclick="showAddMoreHH()">+ Add</button><button class="btn" onclick="resetHH()">← Back</button></div>
     </div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:6px">
@@ -402,7 +402,7 @@ function onBuyinChange(val){
   if(HH.length) refreshHHStats();
 }
 var ftByTour = {};
-var HH = [], HHtext = "", HHtours = {}, HHraw = [], HHids = new Set();
+var HH = [], HHtext = "", HHtours = {}, HHraw = [], HHids = new Set(), hhAppend = false;
 var allHHMonths = {}, allRT = [], activeMonths = {}, hhPage = 1;
 var histHH = [], histRES = [];
 
@@ -474,6 +474,7 @@ function switchMain(n,b) {
   $e("M-res").style.display=n==="res"?"block":"none";
   if(n==="res") updateStoredNotice();
 }
+function showAddMoreHH() { hhAppend=true; $e("HH-up").style.display="block"; $e("HH-res").style.display="none"; $e("hh-cnt").textContent=HH.length+" hands loaded"; $e("hh-go").disabled=false; }
 function showAddMore() { $e("R-up").style.display="block"; $e("R-res").style.display="none"; }
 function clearStored() { allRT=[]; activeMonths={}; $e("res-stored-notice").style.display="none"; resetRes(); }
 function updateStoredNotice() {
@@ -502,8 +503,8 @@ window.addEventListener("DOMContentLoaded", function(){
 });
 
 async function loadFiles(pre,files) {
-  $e(pre+"-chips").innerHTML=""; $e(pre+"-log").innerHTML="";
-  if(pre==="hh"){HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();}
+  if(!(pre==="hh"&&hhAppend)) $e(pre+"-chips").innerHTML=""; $e(pre+"-log").innerHTML="";
+  if(pre==="hh"&&!hhAppend){HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();}
   clearErr(pre);
   var txts=[];
   for(var fi=0;fi<files.length;fi++){
@@ -550,7 +551,7 @@ async function loadFiles(pre,files) {
   }
   if(pre==="hh"){
     if(!HH.length){showErr("hh","No GGPoker MBR hands found."); $e("hh-go").disabled=true; return;}
-    $e("hh-cnt").textContent=HH.length+" hands";
+    $e("hh-cnt").textContent=HH.length+" hands"+(hhAppend?" (added "+found+")":"");
     $e("hh-go").disabled=false;
     if(HHraw.length>1) $e("hh-merge").style.display="inline-flex";
     clearErr("hh");
@@ -1184,7 +1185,7 @@ function renderDecisionChart(byMonth) {
 // ============================================================
 // SECTION: RENDER — HH STATS
 // ============================================================
-function doHH() { if(!HH.length) return; allHHMonths={}; buildHHMonthFilter(); $e("HH-up").style.display="none"; $e("HH-res").style.display="block"; refreshHHStats(); }
+function doHH() { if(!HH.length) return; if(!hhAppend) allHHMonths={}; hhAppend=false; buildHHMonthFilter(); $e("HH-up").style.display="none"; $e("HH-res").style.display="block"; refreshHHStats(); }
 
 function refreshHHStats() {
   var hands=filteredHH();
@@ -1840,6 +1841,7 @@ function renderChartPlace() {
 }
 
 function resetHH() {
+  hhAppend=false;
   $e("HH-up").style.display="block"; $e("HH-res").style.display="none";
   HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();allHHMonths={};
   $e("hh-pf").style.width="0"; $e("hh-pw").style.display="none";
@@ -1854,7 +1856,7 @@ function resetRes() {
 }
 function hhDemo() {
   var txt="Poker Hand #BR1133665341: Tournament #285710636, Mystery Battle Royale $1 Hold'em No Limit - Level12(400/800(160)) - 2026/05/17 22:51:53\nTable '2' 9-max Seat #9 is the button\nSeat 1: ac2cf6bc (5,768 in chips)\nSeat 5: e16982b4 (5,714 in chips)\nSeat 9: Hero (6,518 in chips)\nac2cf6bc: posts the ante 160\ne16982b4: posts the ante 160\nHero: posts the ante 160\nac2cf6bc: posts small blind 400\ne16982b4: posts big blind 800\n*** HOLE CARDS ***\nDealt to Hero [Ts Kc]\nHero: raises 800 to 1,600\nac2cf6bc: folds\ne16982b4: calls 800\n*** FLOP *** [Ad 3c Td]\ne16982b4: checks\nHero: bets 1,347\ne16982b4: raises 2,607 to 3,954 and is all-in\nHero: calls 2,607\n*** TURN *** [Ad 3c Td] [2c]\n*** RIVER *** [Ad 3c Td 2c] [4d]\n*** SHOWDOWN ***\ne16982b4 collected 11,988 from pot\n*** SUMMARY ***\nTotal pot 11,988 | Rake 0\nBoard [Ad 3c Td 2c 4d]\nSeat 5: e16982b4 (big blind) showed [Ac 7c] and won (11,988) with a pair of Aces\nSeat 9: Hero (button) showed [Ts Kc] and lost with a pair of Tens";
-  HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();allHHMonths={};$e("hh-chips").innerHTML="";
+  hhAppend=false;HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();allHHMonths={};$e("hh-chips").innerHTML="";
   parseGG(txt,"demo.txt"); HHraw=[txt]; HHtext=txt;
   setP("hh",100,"Demo","Found "+HH.length);
   $e("hh-cnt").textContent=HH.length+" hands (demo)";
