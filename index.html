@@ -286,19 +286,19 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px">
           <div class="card-hdr" style="margin:0">📈 Cumulative Profit</div>
         </div>
-        <div style="position:relative;width:100%;height:300px"><canvas id="chart-cum-canvas" width="1654" height="600" style="display: block; box-sizing: border-box; height: 300px; width: 827px;"></canvas></div>
+        <div style="position:relative;width:100%;height:300px"><canvas id="chart-cum-canvas"></canvas></div>
       </div>
       <div class="card" style="margin-bottom:.875rem">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px">
           <div class="card-hdr" style="margin:0">📈 ROI by Month</div>
         </div>
-        <div style="position:relative;width:100%;height:260px"><canvas id="chart-roi-canvas" width="1654" height="520" style="display: block; box-sizing: border-box; height: 260px; width: 827px;"></canvas></div>
+        <div style="position:relative;width:100%;height:260px"><canvas id="chart-roi-canvas"></canvas></div>
       </div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px">
           <div class="card-hdr" style="margin:0">📈 Place Distribution</div>
         </div>
-        <div style="position:relative;width:100%;height:260px"><canvas id="chart-place-canvas" width="1654" height="520" style="display: block; box-sizing: border-box; height: 260px; width: 827px;"></canvas></div>
+        <div style="position:relative;width:100%;height:260px"><canvas id="chart-place-canvas"></canvas></div>
       </div>
     </div>
   </div>
@@ -1414,7 +1414,8 @@ function findBountyCombos(cents,k) {
   return combos;
 }
 
-function refreshResStats() {
+function refreshResStats() { refreshResStatsCore(); var cp=$e("rT-chart"); if(cp&&cp.style.display!=="none") renderChart(); }
+function refreshResStatsCore() {
   var RT=filteredRT();
   if(!RT.length){$e("res-rtitle").textContent="No data"; $e("res-sg").innerHTML=""; $e("res-ov-c").innerHTML=""; return;}
   var total=RT.length, itm=RT.filter(function(t){return t.itm;}).length, madeFT=RT.filter(function(t){return t.madeFT;}).length;
@@ -1717,10 +1718,11 @@ function renderChart() {
 }
 
 function renderChartCum() {
-  var RT=allRT.filter(function(t){return t.date>0;});
+  var RTf=filteredRT();
+  var RT=RTf.filter(function(t){return t.date>0;});
   RT.sort(function(a,b){return a.date-b.date;});
   var canvas=document.getElementById("chart-cum-canvas");
-  if(!canvas||!RT.length) return;
+  chartCum=destroyChart(chartCum); if(!canvas||!RT.length) return;
   var labels=[],data=[],running=0;
   for(var i=0;i<RT.length;i++){
     var tCost=RT[i].buyin+RT[i].rake+RT[i].bountyPool;
@@ -1751,11 +1753,12 @@ function renderChartCum() {
 }
 
 function renderChartRoi() {
+  var RTf=filteredRT();
   var canvas=document.getElementById("chart-roi-canvas");
   if(!canvas) return;
   var months={};
-  for(var i=0;i<allRT.length;i++){
-    var t=allRT[i]; if(!t.date) continue;
+  for(var i=0;i<RTf.length;i++){
+    var t=RTf[i]; if(!t.date) continue;
     var mk=getMonthKey(t.date);
     if(!months[mk]) months[mk]={inv:0,prize:0};
     months[mk].inv+=t.buyin+t.rake+t.bountyPool; months[mk].prize+=t.prize;
@@ -1793,12 +1796,13 @@ function renderChartRoi() {
 }
 
 function renderChartPlace() {
+  var RTf=filteredRT();
   var canvas=document.getElementById("chart-place-canvas");
   if(!canvas) return;
   var dist={};
   for(var i=1;i<=18;i++) dist[i]=0;
-  for(var i=0;i<allRT.length;i++){
-    var p=allRT[i].place;
+  for(var i=0;i<RTf.length;i++){
+    var p=RTf[i].place;
     if(p>=1&&p<=18) dist[p]++;
   }
   var maxPlace=18;
