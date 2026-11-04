@@ -102,15 +102,15 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
     <button class="ntab on" onclick="switchMain(&#39;res&#39;,this)">Tournament Results</button>
   </div>
 </div>
+<div id="persist-note" style="display:none;font-size:12px;color:#666;margin:-.75rem 0 1rem"></div>
 <div class="info-grid">
   <div class="ic"><div class="ic-l">Format</div><div class="ic-v">18 players · 2 stages</div></div>
   <div class="ic"><div class="ic-l">Buy-in</div><div class="ic-v" id="info-buyin">$0.25 (0.125+0.02+0.105)</div></div>
   <div class="ic"><div class="ic-l">Rush Stage</div><div class="ic-v">5-max fast-fold</div></div>
   <div class="ic"><div class="ic-l">Final Table</div><div class="ic-v">9-max Mystery Bounty</div></div>
   <div class="ic"><div class="ic-l">Fixed prizes</div><div class="ic-v" id="info-fixed-prizes">1°$1 · 2°$0.75 · 3°$0.5</div></div>
-  <div class="ic"><div class="ic-l">Bounty Pool</div><div class="ic-v">18×$0.42 = $7.56</div></div>
-  <div class="ic"><div class="ic-l">Avg EV</div><div class="ic-v">~$0.945</div></div>
-  <div class="ic"><div class="ic-l">Action Race</div><div class="ic-v">$600/day</div></div>
+  <div class="ic"><div class="ic-l">Bounty Pool</div><div class="ic-v" id="info-pool">18×$0.42 = $7.56</div></div>
+  <div class="ic"><div class="ic-l">Avg EV</div><div class="ic-v" id="info-avgev">~$0.945</div></div>
 </div>
 
 <div id="M-hh" style="display: none;">
@@ -256,7 +256,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
       <div class="month-grid" id="month-filter"></div>
     </div>
     <div class="sgrid" id="res-sg"></div>
-    <div class="alert a-amber" style="font-size:12px" id="res-prize-alert"><strong>MBR $0.25:</strong> &nbsp;<span class="pill p-blue">1° $1.00</span> <span class="pill p-gray">2° $0.75</span> <span class="pill p-gray">3° $0.50</span> fixed &nbsp;+&nbsp; Mystery Bounty ($$0.06–$5,000). Places 4–9 = bounty only.</div>
+    <div class="alert a-amber" style="font-size:12px" id="res-prize-alert"><strong>MBR $0.25:</strong> &nbsp;<span class="pill p-blue">1° $1.00</span> <span class="pill p-gray">2° $0.75</span> <span class="pill p-gray">3° $0.50</span> fixed &nbsp;+&nbsp; Mystery Bounty ($0.25–$10,000). Places 4–9 = bounty only.</div>
     <div class="stabs" id="res-stabs">
       <button class="st" onclick="resTab(&#39;ov&#39;,this)">Overview</button>
       <button class="st" onclick="resTab(&#39;ft&#39;,this)">🏆 Final Table</button>
@@ -374,11 +374,72 @@ function updateConfigUI(){
   var maxB=c.bountyDist[c.bountyDist.length-1];
   var minB=c.bountyDist[0];
   var alertEl=document.getElementById("res-prize-alert");
-  if(alertEl) alertEl.innerHTML="<strong>"+c.label+":</strong> &nbsp;<span class=\"pill p-blue\">1&deg; $"+fp[1].toFixed(2)+"</span> <span class=\"pill p-gray\">2&deg; $"+fp[2].toFixed(2)+"</span> <span class=\"pill p-gray\">3&deg; $"+fp[3].toFixed(2)+"</span> fixed &nbsp;+&nbsp; Mystery Bounty ($"+minB.label+"&ndash;"+maxB.label+"). Places 4&ndash;9 = bounty only.";
+  if(alertEl) alertEl.innerHTML="<strong>"+c.label+":</strong> &nbsp;<span class=\"pill p-blue\">1&deg; $"+fp[1].toFixed(2)+"</span> <span class=\"pill p-gray\">2&deg; $"+fp[2].toFixed(2)+"</span> <span class=\"pill p-gray\">3&deg; $"+fp[3].toFixed(2)+"</span> fixed &nbsp;+&nbsp; Mystery Bounty ("+minB.label+"&ndash;"+maxB.label+"). Places 4&ndash;9 = bounty only.";
   var biEl=document.getElementById("info-buyin");
   if(biEl) biEl.textContent="$"+(c.buyin+c.rake+c.bountyPool).toFixed(2)+" ("+c.buyin+"+"+c.rake+"+"+c.bountyPool+")";
+  var pEl=document.getElementById("info-pool"); if(pEl) pEl.textContent="18\u00d7$"+c.bountyPool+" = $"+(18*c.bountyPool).toFixed(2);
+  var eEl=document.getElementById("info-avgev"); if(eEl) eEl.textContent="~$"+c.avgBountyEV;
 }
 var PER_PAGE = 50;
+
+// ============================================================
+// SECTION: PERSISTENCE (IndexedDB) + TIER SYNC
+// ============================================================
+var DB_NAME="mbr-analyzer", DB_STORE="kv";
+function idbOpen(){ return new Promise(function(res,rej){ var r=indexedDB.open(DB_NAME,1); r.onupgradeneeded=function(){r.result.createObjectStore(DB_STORE);}; r.onsuccess=function(){res(r.result);}; r.onerror=function(){rej(r.error);}; }); }
+function idbGet(db,key){ return new Promise(function(res,rej){ var q=db.transaction(DB_STORE).objectStore(DB_STORE).get(key); q.onsuccess=function(){res(q.result);}; q.onerror=function(){rej(q.error);}; }); }
+async function saveState(){
+  try{
+    var db=await idbOpen(), CH=1500, chunks=Math.ceil(HH.length/CH);
+    await new Promise(function(res,rej){
+      var tx=db.transaction(DB_STORE,"readwrite"), st=tx.objectStore(DB_STORE);
+      st.clear();
+      st.put({v:1,saved:Date.now(),chunks:chunks,hh:HH.length,rt:allRT.length,ftByTour:ftByTour,HHtours:HHtours},"meta");
+      st.put(allRT,"rt");
+      for(var i=0;i<chunks;i++) st.put(HH.slice(i*CH,(i+1)*CH),"hh:"+i);
+      tx.oncomplete=function(){res();}; tx.onerror=tx.onabort=function(){rej(tx.error);};
+    });
+    db.close(); updatePersistNote(true);
+  }catch(e){ updatePersistNote(false); }
+}
+async function loadState(){
+  try{
+    var db=await idbOpen(), meta=await idbGet(db,"meta");
+    if(!meta){db.close(); return null;}
+    var rt=(await idbGet(db,"rt"))||[], hh=[];
+    for(var i=0;i<meta.chunks;i++){ var c=await idbGet(db,"hh:"+i); if(c) hh=hh.concat(c); }
+    db.close();
+    allRT=rt; HH=hh; HHids=new Set(hh.map(function(h){return h.id;})); ftByTour=meta.ftByTour||{}; HHtours=meta.HHtours||{};
+    return {rt:rt.length,hh:hh.length,saved:meta.saved};
+  }catch(e){ return null; }
+}
+async function restoreState(){
+  var info=await loadState();
+  if(!info||(!info.rt&&!info.hh)) return;
+  if(allRT.length){ allRT.sort(function(a,b){return b.date-a.date;}); updateStoredNotice(); doRes(); }
+  if(HH.length){ $e("hh-cnt").textContent=HH.length+" hands"; $e("hh-go").disabled=false; doHH(); }
+  updatePersistNote(true);
+}
+function updatePersistNote(ok){
+  var el=$e("persist-note"); if(!el) return;
+  if(!ok||(!allRT.length&&!HH.length)){ el.style.display="none"; return; }
+  el.style.display="block";
+  el.innerHTML="&#128190; Saved in this browser: "+allRT.length+" tournaments, "+HH.length+" hands &middot; <a href=\"#\" onclick=\"forgetAll();return false\">clear all</a>";
+}
+async function forgetAll(){
+  if(!confirm("Delete all data saved in this browser (tournaments and hands)?")) return;
+  allRT=[];HH=[];HHids=new Set();HHtours={};HHraw=[];ftByTour={};
+  await saveState();
+  location.reload();
+}
+function syncTier(){
+  var cnt={}; allRT.forEach(function(t){ if(t.tier) cnt[t.tier]=(cnt[t.tier]||0)+1; });
+  var keys=Object.keys(cnt); if(!keys.length) return;
+  keys.sort(function(a,b){return cnt[b]-cnt[a];});
+  applyConfig(keys[0]);
+  var sub=document.querySelector(".brand-sub");
+  if(sub) sub.textContent="GGPoker \u00b7 Hand History + Tournament Results"+(keys.length>1?" \u00b7 several buy-in tiers in data, showing the main one":"");
+}
 
 // ============================================================
 // SECTION: STATE
@@ -476,7 +537,7 @@ function switchMain(n,b) {
 }
 function showAddMoreHH() { hhAppend=true; $e("HH-up").style.display="block"; $e("HH-res").style.display="none"; $e("hh-cnt").textContent=HH.length+" hands loaded"; $e("hh-go").disabled=false; }
 function showAddMore() { $e("R-up").style.display="block"; $e("R-res").style.display="none"; }
-function clearStored() { allRT=[]; activeMonths={}; $e("res-stored-notice").style.display="none"; resetRes(); }
+function clearStored() { if(!confirm("Delete all loaded tournament results?")) return; allRT=[]; activeMonths={}; $e("res-stored-notice").style.display="none"; resetRes(); saveState(); }
 function updateStoredNotice() {
   if(allRT.length>0){
     $e("res-stored-notice").style.display="flex";
@@ -492,6 +553,7 @@ function updateStoredNotice() {
 // SECTION: FILE LOADING
 // ============================================================
 window.addEventListener("DOMContentLoaded", function(){
+  applyConfig(ACTIVE_CONFIG); restoreState();
   $e("hh-inp").addEventListener("change", function(e){if(e.target.files.length) loadFiles("hh",Array.from(e.target.files));});
   $e("res-inp").addEventListener("change", function(e){if(e.target.files.length) loadFiles("res",Array.from(e.target.files));});
   ["hh","res"].forEach(function(pre){
@@ -554,12 +616,12 @@ async function loadFiles(pre,files) {
     $e("hh-cnt").textContent=HH.length+" hands"+(hhAppend?" (added "+found+")":"");
     $e("hh-go").disabled=false;
     if(HHraw.length>1) $e("hh-merge").style.display="inline-flex";
-    clearErr("hh");
+    clearErr("hh"); syncTier(); saveState();
   } else {
     allRT.sort(function(a,b){return b.date-a.date;});
     if(!allRT.length){showErr("res","No results found."); $e("res-go").disabled=true; return;}
     $e("res-cnt").textContent=allRT.length+" tournaments";
-    $e("res-go").disabled=false; clearErr("res"); updateStoredNotice();
+    $e("res-go").disabled=false; clearErr("res"); updateStoredNotice(); syncTier(); saveState();
   }
 }
 
@@ -791,8 +853,8 @@ function parseRT(text,fname) {
   }
   // Determine config by buyin from file
   var tCfg=null;
-  for(var ck in CONFIGS){var cc=CONFIGS[ck];if(Math.abs(cc.buyin-t.buyin)<0.01){tCfg=cc;break;}}
-  if(!tCfg) tCfg=cfg();
+  for(var ck in CONFIGS){var cc=CONFIGS[ck];if(Math.abs(cc.buyin-t.buyin)<0.01){tCfg=cc;t.tier=ck;break;}}
+  if(!tCfg){tCfg=cfg();t.tier=ACTIVE_CONFIG;}
   t.fixedPrize=tCfg.fixedPrizes[t.place]||0;
   t.bountyEarned=Math.max(0,parseFloat((t.prize-t.fixedPrize).toFixed(2)));
   t.madeFT=t.place>0&&t.place<=9;
@@ -1383,7 +1445,7 @@ function hhAskCustom() { var q=$e("hh-q").value.trim(); if(q){hhAsk(q); $e("hh-q
 // ============================================================
 // SECTION: RENDER — RESULTS STATS
 // ============================================================
-function doRes() { if(!allRT.length) return; buildMonthFilter(allRT); $e("R-up").style.display="none"; $e("R-res").style.display="block"; refreshResStats(); }
+function doRes() { if(!allRT.length) return; syncTier(); buildMonthFilter(allRT); $e("R-up").style.display="none"; $e("R-res").style.display="block"; refreshResStats(); }
 
 // ============================================================
 // SECTION: BOUNTY CALC
@@ -1475,11 +1537,11 @@ function refreshResStatsCore() {
     sr("TOP3 from FT",itm+" ("+ftConv+"%)") +
     sr("Bounty earned","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
     sr("Fixed prizes","<span class=\"c-blue\">$"+fixedTotal.toFixed(2)+"</span>")+
-    "</div><div><div class=\"sec-l\">MBR $1 payouts</div>"+
+    "</div><div><div class=\"sec-l\">"+cfg().label+" payouts</div>"+
     "<div style=\"font-size:13px;line-height:2.2;color:#666\">"+
-    "<div>"+pill("p-blue","1&deg; $4.00")+" + bounties</div>"+
-    "<div>"+pill("p-gray","2&deg; $3.00")+" + bounties</div>"+
-    "<div>"+pill("p-gray","3&deg; $2.00")+" + bounties</div>"+
+    "<div>"+pill("p-blue","1&deg; $"+cfg().fixedPrizes[1].toFixed(2))+" + bounties</div>"+
+    "<div>"+pill("p-gray","2&deg; $"+cfg().fixedPrizes[2].toFixed(2))+" + bounties</div>"+
+    "<div>"+pill("p-gray","3&deg; $"+cfg().fixedPrizes[3].toFixed(2))+" + bounties</div>"+
     "<div style=\"font-size:12px;color:#999\">4-9 bounty only</div>"+
     "</div></div></div>";
 
@@ -1544,12 +1606,15 @@ function refreshResStatsCore() {
   distRows+="<td><strong style=\"color:#0F6E56\">$"+confirmedEarned.toFixed(2)+"</strong></td>";
   distRows+="<td style=\"color:#999\">"+nko+"&times; / $"+expTotal.toFixed(2)+"</td></tr>";
 
+  var hhTidSet=new Set(HH.map(function(h){return h.tid;}));
+  var bountyTours=RT.filter(function(t){return t.bountyEarned>0;}).length;
+  var bountyCovered=RT.filter(function(t){return t.bountyEarned>0&&hhTidSet.has(t.id);}).length;
   var byMonth={};
   for(var ri=0;ri<RT.length;ri++){
     var t=RT[ri]; var mk=getMonthKey(t.date);
     if(!byMonth[mk]) byMonth[mk]={bounty:0,tours:0};
     byMonth[mk].tours++;
-    if(t.bountyEarned>0) byMonth[mk].bounty+=t.bountyEarned;
+    if(t.bountyEarned>0){ byMonth[mk].bounty+=t.bountyEarned; byMonth[mk].bt=(byMonth[mk].bt||0)+1; if(hhTidSet.has(t.id)) byMonth[mk].hhc=(byMonth[mk].hhc||0)+1; }
   }
   var monthKeys=Object.keys(byMonth).sort();
   var monthRows="";
@@ -1557,20 +1622,22 @@ function refreshResStatsCore() {
     var mk=monthKeys[mi], mv=byMonth[mk];
     var mko=0;
     for(var ri2=0;ri2<RT.length;ri2++){if(getMonthKey(RT[ri2].date)===mk) mko+=koByTour2[RT[ri2].id]||0;}
-    monthRows+="<tr><td>"+monthLabel(mk)+"</td><td>"+mv.tours+"</td><td class=\"c-green\">$"+mv.bounty.toFixed(2)+"</td><td>"+mko+"</td></tr>";
+    monthRows+="<tr><td>"+monthLabel(mk)+"</td><td>"+mv.tours+"</td><td class=\"c-green\">$"+mv.bounty.toFixed(2)+"</td><td>"+mko+"</td><td"+((mv.hhc||0)<(mv.bt||0)?" class=\"c-amber\"":"")+">"+(mv.bt?(mv.hhc||0)+"/"+mv.bt:"&mdash;")+"</td></tr>";
   }
 
   $e("res-bounty-c").innerHTML=
-    "<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:1rem\">Bounty Pool = 18 &times; $0.42 = <strong>$7.56</strong> &middot; 9 envelopes on FT &middot; <strong>Avg EV = $0.9450</strong>. Knockouts from Hand History only.</div>"+
+    "<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:1rem\">Bounty Pool = 18 &times; $"+cfg().bountyPool+" = <strong>$"+(18*cfg().bountyPool).toFixed(2)+"</strong> &middot; 9 envelopes on FT &middot; <strong>Avg EV = $"+cfg().avgBountyEV.toFixed(4)+"</strong>. Knockouts from Hand History only.</div>"+
+    (bountyCovered<bountyTours?"<div class=\"alert a-amber\" style=\"font-size:12px;margin-bottom:1rem\">No Hand History for "+(bountyTours-bountyCovered)+" of "+bountyTours+" tournaments with bounty &mdash; knockouts and \"Confirmed\" are understated. Add Hand History for those months.</div>":"")+
     "<div class=\"two-col\" style=\"margin-bottom:1rem\"><div><div class=\"sec-l\">Bounty stats</div>"+
     sr("Total bounty","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
-    sr("Tournaments with bounty",RT.filter(function(t){return t.bountyEarned>0;}).length)+
+    sr("Tournaments with bounty",bountyTours)+
+    sr("With Hand History","<span class=\""+(bountyCovered<bountyTours?"c-amber":"c-green")+"\">"+bountyCovered+"/"+bountyTours+"</span>")+
     sr("Knockouts (HH)",nko)+
     sr("Confirmed knockouts","<span class=\"c-green\">"+confirmedTotal+" = $"+confirmedEarned.toFixed(2)+"</span>")+
     sr("Avg bounty / KO",nko>0?"$"+(bountyTotal/nko).toFixed(2):"&mdash;")+
     "</div><div><div class=\"sec-l\">EV comparison</div>"+
     sr("Actual bounty","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
-    sr("Expected ("+nko+" &times; $0.945)",nko>0?"$"+expTotal.toFixed(2):"&mdash;")+
+    sr("Expected ("+nko+" &times; $"+AVG_BOUNTY_EV+")",nko>0?"$"+expTotal.toFixed(2):"&mdash;")+
     sr("Deviation",nko>0?"<span class=\""+(deviation>=0?"c-green":"c-amber")+"\">"+(deviation>=0?"+":"")+"$"+deviation.toFixed(2)+" ("+(deviationPct>0?"+":"")+deviationPct+"%)</span>":"&mdash;")+
     "<div style=\"font-size:11px;color:#666;margin-top:.4rem\">Need 500+ knockouts for significance.</div>"+
     "</div></div>"+
@@ -1578,7 +1645,7 @@ function refreshResStatsCore() {
     "<div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:480px;margin-bottom:1rem\">"+
     "<thead><tr><th>Value</th><th>Probability</th><th>Confirmed</th><th>Confirmed earned</th><th>Expected</th></tr></thead>"+
     "<tbody>"+distRows+"</tbody></table></div>"+
-    (monthRows?"<div class=\"div\"></div><div class=\"sec-l\">Bounty by month</div><table class=\"btable\"><thead><tr><th>Month</th><th>Tournaments</th><th>Bounty</th><th>KO (HH)</th></tr></thead><tbody>"+monthRows+"</tbody></table>":"")+
+    (monthRows?"<div class=\"div\"></div><div class=\"sec-l\">Bounty by month</div><table class=\"btable\"><thead><tr><th>Month</th><th>Tournaments</th><th>Bounty</th><th>KO (HH)</th><th>HH coverage</th></tr></thead><tbody>"+monthRows+"</tbody></table>":"")+
     "<div class=\"div\"></div><p style=\"font-size:12px;color:#666\"><strong>Confirmed</strong> - only mathematically possible combination"+(extendedTourCount>0?" (for "+extendedTourCount+" tournament(s) HH under-detected eliminations, so more knockouts than found in Hand History were assumed to make the math work)":"")+".</p>";
 
   renderRL();
@@ -1841,12 +1908,14 @@ function renderChartPlace() {
 }
 
 function resetHH() {
+  if(HH.length&&!confirm("Delete all loaded Hand History hands?")) return;
   hhAppend=false;
   $e("HH-up").style.display="block"; $e("HH-res").style.display="none";
   HH=[];HHtext="";HHtours={};HHraw=[];HHids=new Set();allHHMonths={};
   $e("hh-pf").style.width="0"; $e("hh-pw").style.display="none";
   $e("hh-chips").innerHTML=""; $e("hh-cnt").textContent="";
   $e("hh-go").disabled=true; $e("hh-merge").style.display="none";
+  saveState();
 }
 function resetRes() {
   $e("R-up").style.display="block"; $e("R-res").style.display="none";
