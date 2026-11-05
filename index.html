@@ -1018,7 +1018,7 @@ function rgDraw(){
   g.innerHTML=html;
   var legend=Object.keys(codes).map(function(kk){return "<span style=\"display:inline-flex;align-items:center;gap:4px;margin-right:12px\"><span style=\"width:11px;height:11px;border-radius:2px;background:"+(RG_COL[kk]||"#eee")+";border:1px solid #ccc\"></span>"+codes[kk]+"</span>";}).join("");
   var info=$e("rg-info");
-  if(info) info.innerHTML=legend+"<div style=\"margin-top:4px\">"+(sp.note||"")+(c.stackAssumed?" Межі стека — припущення.":"")+
+  if(info) info.innerHTML=legend+"<div style=\"margin-top:4px\">"+(sp.note||"")+(c.stackAssumed?" Межі стека — припущення.":"")+(c.spot==="rfi"?" Аудит: при стеку 15–25bb береться діапазон на одну позицію раніше, нижче 15bb — пуш/фолд.":"")+
     (rgMine?(afRes.length?" Жовта рамка: у цій руці були відхилення від еталона; «k/n» — скільки разів ви зіграли за еталоном.":" <strong>Аудит ще не запущено.</strong>"):"")+"</div>";
 }
 
@@ -1097,11 +1097,13 @@ function afEvalHand(h){
       if(!m) return {skip:"no_chart"};
       spot="pushfold"; chart=RG.by["pf:"+band+":"+m.pos]; approx=m.approx;
     } else if(hp==="SB"){ return {skip:"sb_open"}; }
-    else if(st>=25){
+    else {
       var av2=RG.doc.charts.filter(function(c){return c.spot==="rfi";}).map(function(c){return c.pos;});
       if(!av2.length) return {skip:"no_chart"};
-      m=afNearest(hp,av2); spot="rfi"; chart=RG.by["rfi:"+m.pos]; approx=m.approx;
-    } else return {skip:"stack_15_25"};
+      var look=hp, shifted=false;
+      if(st<25){ look=AF_POS[Math.max(0,AF_POS.indexOf(hp)-1)]; shifted=true; }   // stack 15-25bb: use the range of one position earlier
+      m=afNearest(look,av2); spot="rfi"; chart=RG.by["rfi:"+m.pos]; approx=m.approx||shifted;
+    }
   } else if(raises===0){ return {skip:"limped"}; }
   else if(raises===1&&limpers===0&&callers===0){
     if(hp!=="BB") return {skip:"vs_raise"};
@@ -1147,7 +1149,7 @@ async function runAudit(){
 function renderAuditTab(){
   var el=$e("af-body"); if(!el) return;
   if(!RG){ el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px\">Спершу завантажте діапазони у вкладці «Ranges».</div>"; return; }
-  el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:.875rem\">Для кожної роздачі програма визначає спот (опен, пуш/фолд при стеку до 15bb, захист BB проти одного рейза), дивиться на вашу руку в діаграмі й порівнює з тим, що ви зробили. «Відхилення» не завжди помилка: діаграми не враховують ICM і бавнті. Дії після 3-бета й споти без діаграми не оцінюються.</div>"+
+  el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:.875rem\">Для кожної роздачі програма визначає спот (опен: від 25bb за своєю позицією, 15–25bb за діапазоном на одну позицію раніше; пуш/фолд при стеку до 15bb; захист BB проти одного рейза), дивиться на вашу руку в діаграмі й порівнює з тим, що ви зробили. «Відхилення» не завжди помилка: діаграми не враховують ICM і бавнті. Дії після 3-бета й споти без діаграми не оцінюються.</div>"+
     "<div style=\"display:flex;gap:8px;align-items:center;flex-wrap:wrap\"><button class=\"btn btn-primary\" onclick=\"runAudit()\">▶ Запустити аудит (вибрані місяці)</button>"+
     "<select id=\"af-stage\" onchange=\"afRender()\"><option value=\"all\">Rush + Фінал</option><option value=\"rush\">Тільки Rush</option><option value=\"final\">Тільки Фінал</option></select><span id=\"af-prog\" style=\"font-size:12px;color:#666\"></span></div>"+
     "<div id=\"af-res\" style=\"margin-top:.875rem\"></div>";
@@ -1164,7 +1166,7 @@ function afRender(){
     "<div class=\"sc\"><div class=\"sc-l\">Преф-рішень</div><div class=\"sc-v c-blue\">"+total+"</div></div>"+
     "<div class=\"sc\"><div class=\"sc-l\">З еталоном</div><div class=\"sc-v\">"+Math.round(R.length/total*100)+"%</div><div class=\"sc-s\">"+R.length+" роздач</div></div>"+
     "<div class=\"sc\"><div class=\"sc-l\">За еталоном</div><div class=\"sc-v "+(R.length&&ok/R.length>=0.8?"c-green":"c-amber")+"\">"+(R.length?Math.round(ok/R.length*100):0)+"%</div><div class=\"sc-s\">"+ok+" з "+R.length+"</div></div>"+
-    "<div class=\"sc\"><div class=\"sc-l\">Відхилень</div><div class=\"sc-v c-red\">"+(R.length-ok)+"</div>"+(appr?"<div class=\"sc-s\">≈ "+appr+" за найближчою позицією</div>":"")+"</div></div>";
+    "<div class=\"sc\"><div class=\"sc-l\">Відхилень</div><div class=\"sc-v c-red\">"+(R.length-ok)+"</div>"+(appr?"<div class=\"sc-s\">≈ "+appr+": найближча позиція або зсув при стеку <25bb</div>":"")+"</div></div>";
   // by spot x position
   var groups={}, order=[];
   R.forEach(function(r){ var k=r.spot+"|"+r.pos; if(!groups[k]){ groups[k]={spot:r.spot,pos:r.pos,n:0,ok:0,approx:false,kinds:{}}; order.push(k);} var g=groups[k]; g.n++; if(r.ok) g.ok++; else g.kinds[r.kind]=(g.kinds[r.kind]||0)+1; if(r.approx) g.approx=true; });
