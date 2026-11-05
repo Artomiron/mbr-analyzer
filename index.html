@@ -1282,6 +1282,85 @@ function afEvalHand(h){
   }
   return {id:h.id,chart:chart.id,spot:spot,pos:hp,approx:approx,hand:nc,cards:h.cards,rec:rec,act:act,ok:ok,kind:kind,stack:st,stage:h.stage};
 }
+// ---------------- plain-text conclusions: where and with which hands you leave the charts ----------------
+function afClass(nc){
+  var RK="AKQJT98765432", ia=RK.indexOf(nc.charAt(0)), ib=RK.indexOf(nc.charAt(1)), su=nc.charAt(2)==="s";
+  if(nc.length===2) return ia<=4?"пари TT+":(ia<=8?"середні пари 99–66":"малі пари 55–22");
+  if(ia===0) return su?"suited Ax":"offsuit Ax";
+  if(ib<=4) return su?"suited broadway":"offsuit broadway";
+  if(su&&(ia===1||ia===2)) return "suited Kx/Qx";
+  if(su) return (ib-ia-1)<=2?"suited конектори":"інші suited";
+  return ia<=3?"слабші offsuit Kx/Qx/Jx":"слабкі offsuit";
+}
+var AF_SENT={
+  rfi:{missed:"Не відкриваєтесь рейзом руками з діапазону",outside:"Відкриваєтесь рейзом руками поза діапазоном",limp:"Лімпите замість рейзу чи фолду"},
+  pushfold:{missed:"Фолдите руки, які за діаграмою треба пушити",outside:"Пушите або рейзите руками поза діапазоном",wrongsize:"Рейзите замість олл-іну",limp:"Лімпите замість пуш/фолду"},
+  bbdef:{missed:"Фолдите руки, які треба захищати",outside:"Захищаєтесь руками поза діапазоном",passive:"Коллите руки, які за діаграмою треба 3-бетити",aggro:"3-бетите руки, які за діаграмою треба коллити"}
+};
+var AF_WHAT={missed:"фолд",outside:"грали",limp:"лімп",wrongsize:"рейз",passive:"колл",aggro:"3-бет"};
+function afBase(kind,r){   // the pool of hands a pattern is measured against
+  if(kind==="missed") return r.rec!==".";
+  if(kind==="outside") return r.rec===".";
+  if(kind==="passive") return r.rec==="T";
+  if(kind==="aggro") return r.rec==="C";
+  if(kind==="wrongsize") return r.rec==="A";
+  return true;
+}
+function afGroupLabel(g){
+  if(g.spot==="rfi") return "Відкриття · "+g.pos+" · стек "+(g.band==="mid"?"15–25bb":"25bb+");
+  if(g.spot==="pushfold") return "Пуш/фолд · "+g.pos+" · "+g.band.replace("-","–")+"bb";
+  return "Захист BB · "+({early:"проти ранніх позицій",mid:"проти середніх",late:"проти пізніх"}[g.band]||g.band);
+}
+function afConclusions(R){
+  var G={}, out=[];
+  R.forEach(function(r){
+    var band=r.spot==="rfi"?(r.stack<25?"mid":"deep"):r.chart.split(":")[r.spot==="pushfold"?1:1];
+    var k=r.spot+"|"+(r.spot==="bbdef"?"":r.pos)+"|"+band;
+    var g=G[k]||(G[k]={spot:r.spot,pos:r.pos,band:band,all:[],approx:false}); g.all.push(r); if(r.approx) g.approx=true;
+  });
+  Object.keys(G).forEach(function(k){
+    var g=G[k], devs=g.all.filter(function(r){return !r.ok;}), kinds={};
+    devs.forEach(function(r){ (kinds[r.kind]||(kinds[r.kind]=[])).push(r); });
+    var items=[];
+    Object.keys(kinds).forEach(function(kind){
+      if(kinds[kind].length<2) return;
+      var base=g.all.filter(function(r){return afBase(kind,r);}), byHand={}, byCls={};
+      base.forEach(function(r){
+        var h=byHand[r.hand]||(byHand[r.hand]={dev:0,tot:0}), cn=afClass(r.hand), c=byCls[cn]||(byCls[cn]={dev:0,tot:0});
+        h.tot++; c.tot++; if(r.kind===kind){ h.dev++; c.dev++; }
+      });
+      var hands=Object.keys(byHand).filter(function(h){return byHand[h].dev>0;}).sort(function(a,b){return (byHand[b].dev-byHand[a].dev)||(byHand[b].dev/byHand[b].tot-byHand[a].dev/byHand[a].tot);}).slice(0,6)
+        .map(function(h){return {hand:h,dev:byHand[h].dev,tot:byHand[h].tot};});
+      var cls=Object.keys(byCls).filter(function(c){return byCls[c].tot>=3&&byCls[c].dev/byCls[c].tot>=0.5;}).sort(function(a,b){return byCls[b].dev-byCls[a].dev;}).slice(0,2)
+        .map(function(c){return {name:c,dev:byCls[c].dev,tot:byCls[c].tot};});
+      items.push({kind:kind,text:AF_SENT[g.spot][kind],dev:kinds[kind].length,tot:base.length,hands:hands,cls:cls});
+    });
+    if(items.length) out.push({label:afGroupLabel(g),n:g.all.length,devs:devs.length,approx:g.approx,items:items.sort(function(a,b){return b.dev-a.dev;})});
+  });
+  return out.sort(function(a,b){return b.devs-a.devs;});
+}
+function afItemHtml(it,short){
+  var pct=it.tot?Math.round(it.dev/it.tot*100):0;
+  return "<strong>"+it.text+"</strong> — "+it.dev+" з "+it.tot+" ("+pct+"%)."+
+    (it.hands.length?" Найчастіше ("+AF_WHAT[it.kind]+"): "+it.hands.slice(0,short?4:6).map(function(h){return "<span style=\"font-family:ui-monospace,SFMono-Regular,Menlo,monospace\">"+h.hand+"</span> "+h.dev+"/"+h.tot;}).join(", ")+".":"")+
+    (it.cls.length?" Патерн: "+it.cls.map(function(c){return c.name+" — "+c.dev+" з "+c.tot;}).join("; ")+".":"");
+}
+function afConclusionsHtml(R){
+  var C=afConclusions(R);
+  if(!C.length) return "<div class=\"alert a-ok\" style=\"font-size:13px\"><strong>Висновки.</strong> Систематичних відхилень від діаграм не знайдено.</div>";
+  var flat=[]; C.forEach(function(g){ g.items.forEach(function(it){ flat.push({g:g,it:it}); }); });
+  flat.sort(function(a,b){return b.it.dev-a.it.dev;});
+  var top=flat.filter(function(x){return x.it.dev>=3;}).slice(0,6);
+  var html="<div class=\"alert a-info\" style=\"font-size:13px;margin-bottom:1rem\"><div class=\"sec-l\" style=\"color:inherit;opacity:.8\">Головні висновки</div>";
+  html+=top.length?"<ol style=\"margin-left:1.2rem;display:flex;flex-direction:column;gap:.55rem\">"+top.map(function(x){ return "<li><strong>"+x.g.label+(x.g.approx?" ≈":"")+"</strong>: "+afItemHtml(x.it,true)+(x.g.n<15?" <span style=\"opacity:.7\">(мала вибірка: "+x.g.n+" рук)</span>":"")+"</li>"; }).join("")+"</ol>"
+    :"<div>Помітних патернів (від 3 повторів) немає, відхилення поодинокі.</div>";
+  html+="<div style=\"font-size:11.5px;opacity:.75;margin-top:.7rem\">Це відхилення від діаграм, а не гарантовані помилки: діаграми не враховують ICM і бавнті. «Фолд A5s 3/3» означає, що рука траплялась 3 рази й усі 3 рази ви зіграли не за діаграмою.</div></div>";
+  html+="<details style=\"margin-bottom:1.1rem\"><summary style=\"cursor:pointer;font-size:13px;font-weight:600\">Усі висновки по позиціях ("+C.length+")</summary><div style=\"margin-top:.6rem;display:flex;flex-direction:column;gap:.7rem\">"+
+    C.map(function(g){ return "<div style=\"border:1px solid var(--line);border-radius:var(--r);padding:.7rem .9rem\"><div style=\"font-weight:600;margin-bottom:.35rem\">"+g.label+(g.approx?" ≈":"")+" <span style=\"font-weight:400;color:var(--muted);font-size:12px\">· "+g.devs+" відхилень із "+g.n+(g.n<15?", мала вибірка":"")+"</span></div>"+
+      "<ul style=\"margin-left:1.1rem;display:flex;flex-direction:column;gap:.35rem;font-size:13px\">"+g.items.map(function(it){return "<li>"+afItemHtml(it,false)+"</li>";}).join("")+"</ul></div>"; }).join("")+"</div></details>";
+  return html;
+}
+
 async function runAudit(){
   if(!RG) return;
   var hands=filteredHH(), prog=$e("af-prog"), i, r;
@@ -1316,6 +1395,7 @@ function afRender(){
     "<div class=\"sc\"><div class=\"sc-l\">З еталоном</div><div class=\"sc-v\">"+Math.round(R.length/total*100)+"%</div><div class=\"sc-s\">"+R.length+" роздач</div></div>"+
     "<div class=\"sc\"><div class=\"sc-l\">За еталоном</div><div class=\"sc-v "+(R.length&&ok/R.length>=0.8?"c-green":"c-amber")+"\">"+(R.length?Math.round(ok/R.length*100):0)+"%</div><div class=\"sc-s\">"+ok+" з "+R.length+"</div></div>"+
     "<div class=\"sc\"><div class=\"sc-l\">Відхилень</div><div class=\"sc-v c-red\">"+(R.length-ok)+"</div>"+(appr?"<div class=\"sc-s\">≈ "+appr+": найближча позиція або зсув при стеку <25bb</div>":"")+"</div></div>";
+  html+=afConclusionsHtml(R);
   // by spot x position
   var groups={}, order=[];
   R.forEach(function(r){ var k=r.spot+"|"+r.pos; if(!groups[k]){ groups[k]={spot:r.spot,pos:r.pos,n:0,ok:0,approx:false,kinds:{}}; order.push(k);} var g=groups[k]; g.n++; if(r.ok) g.ok++; else g.kinds[r.kind]=(g.kinds[r.kind]||0)+1; if(r.approx) g.approx=true; });
@@ -2337,5 +2417,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.9</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.10</div>
 </body></html>
