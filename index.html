@@ -4,9 +4,11 @@
 <meta name="theme-color" content="#4F46E5">
 
 <title>MBR Analyzer</title>
+<script>(function(){var t=null;try{t=localStorage.getItem("mbr-theme");}catch(e){}if(t!=="light"&&t!=="dark")t=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";document.documentElement.setAttribute("data-theme",t);})();</script>
 <style>
 :root{
-  --bg:#F5F6FA; --surface:#FFFFFF; --text:#111827; --muted:#6B7280; --faint:#9CA3AF; --line:#E7E9EF; --line-2:#D1D5DB;
+  --bg:#F5F6FA; --surface:#FFFFFF; --text:#111827; --text-2:#374151; --muted:#6B7280; --faint:#9CA3AF; --line:#E7E9EF; --line-2:#D1D5DB;
+  --soft:#F1F3F7; --soft-2:#F8F9FB; --hover:#F9FAFB; --hover-a:#FAFAFF; --track:#EDEFF5; --nav-bg:#E9EBF3; --cell-off:#EEF0F4; --grid:rgba(17,24,39,.06); --glow:rgba(79,70,229,.10);
   --accent:#4F46E5; --accent-d:#3730A3; --accent-s:#EEF2FF; --accent-b:#C7D2FE;
   --ok:#059669; --ok-s:#ECFDF5; --ok-b:#A7F3D0; --ok-d:#065F46;
   --bad:#DC2626; --bad-s:#FEF2F2; --bad-b:#FECACA; --bad-d:#991B1B;
@@ -15,9 +17,20 @@
   --sh-1:0 1px 2px rgba(17,24,39,.05);
   --sh-2:0 1px 3px rgba(17,24,39,.05),0 10px 28px -12px rgba(17,24,39,.12);
 }
+[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0D1018; --surface:#151A25; --text:#E8EAF0; --text-2:#C5CAD6; --muted:#98A2B3; --faint:#667085; --line:#232A38; --line-2:#303A4C;
+  --soft:#1C2331; --soft-2:#181E2B; --hover:#1A2130; --hover-a:#1B2133; --track:#232A38; --nav-bg:#1A2030; --cell-off:#1E2534; --grid:rgba(255,255,255,.07); --glow:rgba(129,140,248,.14);
+  --accent:#818CF8; --accent-d:#C7D2FE; --accent-s:rgba(129,140,248,.14); --accent-b:rgba(129,140,248,.38);
+  --ok:#34D399; --ok-s:rgba(52,211,153,.12); --ok-b:rgba(52,211,153,.32); --ok-d:#6EE7B7;
+  --bad:#F87171; --bad-s:rgba(248,113,113,.12); --bad-b:rgba(248,113,113,.34); --bad-d:#FCA5A5;
+  --warn:#FBBF24; --warn-s:rgba(251,191,36,.12); --warn-b:rgba(251,191,36,.32); --warn-d:#FCD34D;
+  --sh-1:0 1px 2px rgba(0,0,0,.45);
+  --sh-2:0 1px 3px rgba(0,0,0,.4),0 12px 30px -14px rgba(0,0,0,.7);
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);background-image:radial-gradient(1100px 380px at 50% -140px,rgba(79,70,229,.10),transparent 70%);background-repeat:no-repeat;color:var(--text);
+body{background:var(--bg);background-image:radial-gradient(1100px 380px at 50% -140px,var(--glow),transparent 70%);background-repeat:no-repeat;color:var(--text);
   font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
 .wrap{max-width:1040px;margin:0 auto;padding:2rem 1.25rem 5rem}
 button,select,input,textarea{font-family:inherit}
@@ -27,10 +40,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 .topbar{display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;padding-bottom:0;flex-wrap:wrap}
 .brand-icon{width:44px;height:44px;background:linear-gradient(135deg,#6366F1,#4F46E5 60%,#4338CA);border:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.7)}
 .brand-title{font-size:19px;font-weight:650;letter-spacing:-.015em}.brand-sub{font-size:12.5px;color:var(--muted);margin-top:1px}
-.nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap;background:#E9EBF3;border-radius:13px;padding:4px}
+.nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap;background:var(--nav-bg);border-radius:13px;padding:4px}
 .ntab{padding:.45rem 1rem;font-size:13px;font-weight:550;cursor:pointer;border:none;background:transparent;color:var(--muted);border-radius:10px;transition:all .15s}
 .ntab:hover{color:var(--text)}
-.ntab.on{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(17,24,39,.12)}
+.ntab.on{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(17,24,39,.18)}
+
+.theme-btn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--text-2);font-size:17px;line-height:1;cursor:pointer;box-shadow:var(--sh-1);transition:all .15s;flex-shrink:0}
+.theme-btn:hover{border-color:var(--faint);color:var(--text)}
+.brand-txt{flex:1;min-width:0}
 
 /* reference strip */
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin-bottom:1.5rem}
@@ -42,19 +59,19 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 .card-hdr{font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem;display:flex;align-items:center;gap:7px}
 
 /* upload */
-.drop{border:2px dashed #CBD5E1;border-radius:var(--r-lg);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;position:relative;background:linear-gradient(180deg,#fff,#FAFAFD);transition:all .18s}
+.drop{border:2px dashed var(--line-2);border-radius:var(--r-lg);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;position:relative;background:linear-gradient(180deg,var(--surface),var(--soft-2));transition:all .18s}
 .drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-s)}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drop h3{font-size:16px;font-weight:650;margin-bottom:.3rem}.drop p{font-size:13px;color:var(--muted)}
 .fmts{display:flex;gap:6px;justify-content:center;margin-top:.7rem;flex-wrap:wrap}
-.fmt{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#F3F4F8;color:var(--muted);border:1px solid var(--line)}
+.fmt{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);color:var(--muted);border:1px solid var(--line)}
 .pw{margin:.7rem 0;display:none}
 .pt{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:.35rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.pb{height:5px;background:#EDEFF5;border-radius:3px;overflow:hidden}
+.pb{height:5px;background:var(--track);border-radius:3px;overflow:hidden}
 .pf{height:100%;background:linear-gradient(90deg,#6366F1,#4F46E5);border-radius:3px;transition:width .1s;width:0}
 .plog{margin-top:.35rem;font-size:10px;color:var(--faint);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;max-height:40px;overflow-y:auto}
 .chips-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:.6rem}
-.chip{padding:2px 9px;border-radius:20px;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid var(--line);background:#F8F9FB;color:var(--muted)}
+.chip{padding:2px 9px;border-radius:20px;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid var(--line);background:var(--soft-2);color:var(--muted)}
 .chip.ok{color:var(--ok-d);background:var(--ok-s);border-color:var(--ok-b)}.chip.err{color:var(--bad-d);background:var(--bad-s);border-color:var(--bad-b)}
 
 /* alerts */
@@ -63,12 +80,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 .a-amber{background:var(--warn-s);color:var(--warn-d);border-color:var(--warn-b)}.a-ok{background:var(--ok-s);color:var(--ok-d);border-color:var(--ok-b)}
 
 /* buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:.48rem .95rem;border-radius:10px;font-size:13px;font-weight:550;border:1px solid var(--line-2);background:var(--surface);color:#374151;transition:all .15s;white-space:nowrap;cursor:pointer;box-shadow:var(--sh-1)}
-.btn:hover{background:#F9FAFB;border-color:#B8BFCC;color:var(--text)}.btn:active{transform:translateY(1px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.48rem .95rem;border-radius:10px;font-size:13px;font-weight:550;border:1px solid var(--line-2);background:var(--surface);color:var(--text-2);transition:all .15s;white-space:nowrap;cursor:pointer;box-shadow:var(--sh-1)}
+.btn:hover{background:var(--hover);border-color:var(--faint);color:var(--text)}.btn:active{transform:translateY(1px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .btn-primary{background:linear-gradient(180deg,#5B54F0,#4F46E5);color:#fff;border-color:#4338CA;box-shadow:0 1px 2px rgba(55,48,163,.35),0 6px 14px -6px rgba(79,70,229,.6)}
 .btn-primary:hover{background:linear-gradient(180deg,#5149EC,#4338CA);color:#fff;border-color:#3730A3}
 .btn-ok{background:var(--ok-s);color:var(--ok-d);border-color:var(--ok-b);box-shadow:none}.btn-danger{background:var(--bad-s);color:var(--bad-d);border-color:var(--bad-b);box-shadow:none}
-.btn-danger:hover{background:#FEE2E2;border-color:#FCA5A5;color:var(--bad-d)}
+.btn-danger:hover{background:var(--bad-s);border-color:var(--bad);color:var(--bad-d)}
 .brow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:1rem}
 
 /* stat cards */
@@ -87,17 +104,17 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 /* lists */
 .hlist{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;padding-right:3px;scrollbar-width:thin}
 .hi{padding:.6rem .95rem;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);transition:all .12s}
-.hi:hover{border-color:var(--accent-b);background:#FAFAFF;box-shadow:var(--sh-1)}
+.hi:hover{border-color:var(--accent-b);background:var(--hover-a);box-shadow:var(--sh-1)}
 .hi-name{font-size:13px;font-weight:600}.hi-meta{font-size:11.5px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:1px}
 .hw{color:var(--ok);font-weight:600}.hl{color:var(--faint)}
 .ti{padding:.7rem 1rem;border:1px solid var(--line);border-radius:var(--r);margin-bottom:6px;background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all .12s}
-.ti:hover{border-color:var(--accent-b);background:#FAFAFF}
+.ti:hover{border-color:var(--accent-b);background:var(--hover-a)}
 .ti.itm{border-left:3px solid var(--accent)}.ti.ft{border-left:3px solid #65A30D}
 
 /* bars */
 .br{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .bl{width:120px;font-size:12px;color:var(--muted);flex-shrink:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.bt{flex:1;height:8px;background:#EDEFF5;border-radius:4px;overflow:hidden;border:none}
+.bt{flex:1;height:8px;background:var(--track);border-radius:4px;overflow:hidden;border:none}
 .bf{height:100%;border-radius:4px;transition:width .4s}
 .bv{width:46px;text-align:right;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}.be{width:52px;text-align:right;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 
@@ -105,32 +122,32 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 .pill{display:inline-block;padding:1px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .p-blue{background:var(--accent-s);color:var(--accent-d);border:1px solid var(--accent-b)}.p-green{background:var(--ok-s);color:var(--ok-d);border:1px solid var(--ok-b)}
 .p-red{background:var(--bad-s);color:var(--bad-d);border:1px solid var(--bad-b)}.p-amber{background:var(--warn-s);color:var(--warn-d);border:1px solid var(--warn-b)}
-.p-gray{background:#F3F4F6;color:var(--muted);border:1px solid var(--line-2)}
+.p-gray{background:var(--soft);color:var(--muted);border:1px solid var(--line-2)}
 .rush{display:inline-block;padding:1px 8px;border-radius:20px;font-size:10.5px;font-weight:650;letter-spacing:.03em;background:var(--accent-s);color:var(--accent);border:1px solid var(--accent-b)}
 .final{display:inline-block;padding:1px 8px;border-radius:20px;font-size:10.5px;font-weight:650;letter-spacing:.03em;background:var(--warn-s);color:var(--warn-d);border:1px solid var(--warn-b)}
 .div{height:1px;background:var(--line);margin:1rem 0}
 .aio{font-size:14px;line-height:1.75}.aio h3{font-size:12px;font-weight:650;color:var(--accent);margin:1rem 0 .3rem;text-transform:uppercase;letter-spacing:.05em}
 .aio ul{margin-left:1.15rem;margin-bottom:.65rem}.aio li{margin-bottom:.3rem;color:var(--muted)}.aio strong{font-weight:600}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
-@media(max-width:640px){.two-col{grid-template-columns:1fr}.wrap{padding:1.25rem .85rem 4rem}.card{padding:1.1rem 1rem}.nav{margin-left:0;width:100%}.ntab{flex:1;text-align:center}}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}.wrap{padding:1.25rem .85rem 4rem}.card{padding:1.1rem 1rem}.nav{margin-left:0;width:100%;order:3}.ntab{flex:1;text-align:center}.theme-btn{order:2}}
 .sr{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--line)}
 .sr:last-child{border-bottom:none}.sr-l{font-size:13px;color:var(--muted)}.sr-v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .sec-l{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem}
 
 /* month chips + pagination */
 .mchk{display:inline-flex;align-items:center;gap:5px;padding:.32rem .8rem;border:1px solid var(--line-2);border-radius:20px;cursor:pointer;background:var(--surface);font-size:12px;font-weight:550;color:var(--muted);user-select:none;transition:all .12s}
-.mchk:hover{border-color:#B8BFCC;color:var(--text)}.mchk.on{background:var(--accent-s);border-color:var(--accent-b);color:var(--accent-d)}
+.mchk:hover{border-color:var(--faint);color:var(--text)}.mchk.on{background:var(--accent-s);border-color:var(--accent-b);color:var(--accent-d)}
 .month-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.9rem}
 .pages{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:.85rem;flex-wrap:wrap}
 .pg-btn{padding:.32rem .7rem;border:1px solid var(--line-2);border-radius:8px;font-size:12px;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .12s}
-.pg-btn:hover{background:#F9FAFB;color:var(--text)}.pg-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pg-btn:hover{background:var(--hover);color:var(--text)}.pg-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pg-info{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 
 /* tables */
 .btable{width:100%;border-collapse:collapse;font-size:12.5px}
-.btable th{text-align:left;padding:.5rem .7rem;font-size:10.5px;font-weight:650;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--line);background:#FAFAFC}
+.btable th{text-align:left;padding:.5rem .7rem;font-size:10.5px;font-weight:650;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--line);background:var(--soft-2)}
 .btable td{padding:.55rem .7rem;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
-.btable tbody tr:hover td{background:#FAFAFF}.btable tr:last-child td{border-bottom:none}
+.btable tbody tr:hover td{background:var(--hover-a)}.btable tr:last-child td{border-bottom:none}
 .c-blue{color:var(--accent)}.c-green{color:var(--ok)}.c-red{color:var(--bad)}.c-amber{color:var(--warn)}
 
 /* form controls */
@@ -153,13 +170,14 @@ details[open]>summary::before{transform:rotate(90deg)}
 <div class="wrap">
 <div class="topbar">
   <div class="brand-icon">♠</div>
-  <div><div class="brand-title" id="brand-title">MBR $0.25 Analyzer</div><div class="brand-sub">GGPoker · Hand History + Tournament Results</div></div>
+  <div class="brand-txt"><div class="brand-title" id="brand-title">MBR $0.25 Analyzer</div><div class="brand-sub">GGPoker · Hand History + Tournament Results</div></div>
   <div class="nav">
     <button class="ntab" onclick="switchMain(&#39;hh&#39;,this)">Hand History</button>
     <button class="ntab on" onclick="switchMain(&#39;res&#39;,this)">Tournament Results</button>
   </div>
+  <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Перемкнути тему" title="Темна тема">☾</button>
 </div>
-<div id="persist-note" style="display:none;font-size:12px;color:#6B7280;margin:-.75rem 0 1rem"></div>
+<div id="persist-note" style="display:none;font-size:12px;color:var(--muted);margin:-.75rem 0 1rem"></div>
 <div class="info-grid">
   <div class="ic"><div class="ic-l">Format</div><div class="ic-v">18 players · 2 stages</div></div>
   <div class="ic"><div class="ic-l">Buy-in</div><div class="ic-v" id="info-buyin">$0.25 (0.125+0.02+0.105)</div></div>
@@ -174,7 +192,7 @@ details[open]>summary::before{transform:rotate(90deg)}
   <div id="HH-up" style="display: block;">
     <div class="alert a-info">Load <strong>.zip</strong> or <strong>.txt</strong> Hand History files from GGPoker MBR. New files are added to already loaded hands (duplicates are skipped).</div>
     <div class="drop" id="hh-drop"><input type="file" id="hh-inp" accept=".zip,.txt,.log" multiple="">
-      <div style="font-size:28px;margin-bottom:.5rem;color:#9CA3AF">☁</div>
+      <div style="font-size:28px;margin-bottom:.5rem;color:var(--faint)">☁</div>
       <h3>Drop or click to select</h3>
       <p>GGPoker MBR Hand History · "Poker Hand #BR..."</p>
       <div class="fmts"><span class="fmt">.zip</span><span class="fmt">.txt</span><span class="fmt">multiple</span></div>
@@ -185,17 +203,17 @@ details[open]>summary::before{transform:rotate(90deg)}
       <button class="btn btn-primary" id="hh-go" onclick="doHH()">⚡ Analyze</button>
       <button class="btn" onclick="hhDemo()">▶ Demo</button>
       <button class="btn btn-ok" id="hh-merge" onclick="mergeHH()" style="display: none;">↗ Merge</button>
-      <span id="hh-cnt" style="font-size:12px;color:#6B7280;font-family:monospace"></span>
+      <span id="hh-cnt" style="font-size:12px;color:var(--muted);font-family:monospace"></span>
     </div>
   </div>
   <div id="HH-res" style="display: none;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
-      <div><div style="font-size:18px;font-weight:500" id="hh-rtitle"></div><div style="font-size:12px;color:#6B7280;font-family:monospace;margin-top:2px" id="hh-rsub"></div></div>
+      <div><div style="font-size:18px;font-weight:500" id="hh-rtitle"></div><div style="font-size:12px;color:var(--muted);font-family:monospace;margin-top:2px" id="hh-rsub"></div></div>
       <div style="display:flex;gap:6px"><button class="btn" onclick="showAddMoreHH()">+ Add</button><button class="btn" onclick="resetHH()">← Back</button></div>
     </div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:6px">
-        <div class="card-hdr" style="margin:0">📅 Filter by month <span id="hh-filter-cnt" style="font-weight:400;font-size:11px;margin-left:4px;color:#6B7280"></span></div>
+        <div class="card-hdr" style="margin:0">📅 Filter by month <span id="hh-filter-cnt" style="font-weight:400;font-size:11px;margin-left:4px;color:var(--muted)"></span></div>
         <div style="display:flex;gap:5px">
           <button class="btn" style="font-size:11px;padding:.2rem .65rem" onclick="selectAllHHMonths(true)">All</button>
           <button class="btn" style="font-size:11px;padding:.2rem .65rem" onclick="selectAllHHMonths(false)">None</button>
@@ -247,7 +265,7 @@ details[open]>summary::before{transform:rotate(90deg)}
       <div class="card">
         <div class="card-hdr">🎲 All-in EV (справжня еквіті з шоудаунів)</div>
         <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Беруться роздачі, де hero і один суперник відкрили карти в олл-іні до завершення роздачі. Еквіті рахується точно (флоп і тьорн) або симуляцією 2500 розкладів (префлоп, результат стабільний). Luck = фактично отримано &minus; еквіті &times; банк, у bb. Мультивей і побічні банки пропускаються.</div>
-        <button class="btn btn-primary" onclick="runAllin()">▶ Порахувати вибрані місяці</button><span id="ai-prog" style="font-size:12px;color:#6B7280;margin-left:8px"></span>
+        <button class="btn btn-primary" onclick="runAllin()">▶ Порахувати вибрані місяці</button><span id="ai-prog" style="font-size:12px;color:var(--muted);margin-left:8px"></span>
         <div id="ai-res" style="margin-top:.875rem"></div>
       </div>
     </div>
@@ -265,7 +283,7 @@ details[open]>summary::before{transform:rotate(90deg)}
     <div class="alert a-info">Load new files - they are <strong>added</strong> without duplicates.</div>
     <div id="res-stored-notice" class="alert a-ok" style="display: none; align-items: center;">✓ <span id="res-stored-txt"></span><button class="btn btn-danger" style="margin-left:auto;font-size:11px;padding:.2rem .6rem" onclick="clearStored()">Clear</button></div>
     <div class="drop" id="res-drop"><input type="file" id="res-inp" accept=".zip,.txt" multiple="">
-      <div style="font-size:28px;margin-bottom:.5rem;color:#9CA3AF">🏆</div>
+      <div style="font-size:28px;margin-bottom:.5rem;color:var(--faint)">🏆</div>
       <h3>Tournament Summary files GGPoker MBR</h3>
       <p>"Tournament #...", "Buy-in: $...", "5th : Hero, $1.25"</p>
       <div class="fmts"><span class="fmt">.zip</span><span class="fmt">.txt</span><span class="fmt">multiple</span></div>
@@ -275,12 +293,12 @@ details[open]>summary::before{transform:rotate(90deg)}
     <div class="brow">
       <button class="btn btn-primary" id="res-go" onclick="doRes()">📊 Show stats</button>
       <button class="btn" onclick="resDemo()">▶ Demo</button>
-      <span id="res-cnt" style="font-size:12px;color:#6B7280;font-family:monospace"></span>
+      <span id="res-cnt" style="font-size:12px;color:var(--muted);font-family:monospace"></span>
     </div>
   </div>
   <div id="R-res" style="display: none;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
-      <div><div style="font-size:18px;font-weight:500" id="res-rtitle"></div><div style="font-size:12px;color:#6B7280;font-family:monospace;margin-top:2px" id="res-rsub"></div></div>
+      <div><div style="font-size:18px;font-weight:500" id="res-rtitle"></div><div style="font-size:12px;color:var(--muted);font-family:monospace;margin-top:2px" id="res-rsub"></div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn" onclick="showAddMore()">+ Add</button>
         <button class="btn" onclick="resetRes()">← Back</button>
@@ -358,14 +376,36 @@ details[open]>summary::before{transform:rotate(90deg)}
 // ============================================================
 // SECTION: CONFIG
 // ============================================================
-if(window.Chart){
+// theme: light / dark (saved in localStorage, default = system preference)
+function CV(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function CHC(name){ return function(){ return CV(name); }; }        // scriptable chart colour: re-read on every chart update
+function applyChartTheme(){
+  if(!window.Chart) return;
   Chart.defaults.font.family=getComputedStyle(document.body).fontFamily;
-  Chart.defaults.color="#6B7280";
-  Chart.defaults.borderColor="rgba(17,24,39,0.06)";
+  Chart.defaults.color=CV("--muted"); Chart.defaults.borderColor=CV("--grid");
   Chart.defaults.elements.bar.borderRadius=6; Chart.defaults.elements.bar.borderSkipped=false;
-  Chart.defaults.plugins.tooltip.backgroundColor="rgba(17,24,39,0.94)";
-  Chart.defaults.plugins.tooltip.cornerRadius=8; Chart.defaults.plugins.tooltip.padding=10; Chart.defaults.plugins.tooltip.boxPadding=4;
+  var tt=Chart.defaults.plugins.tooltip, dark=document.documentElement.getAttribute("data-theme")==="dark";
+  tt.backgroundColor=dark?"rgba(36,43,60,0.97)":"rgba(17,24,39,0.94)"; tt.titleColor="#fff"; tt.bodyColor="#E5E7EB";
+  tt.borderColor=dark?"rgba(255,255,255,0.10)":"transparent"; tt.borderWidth=dark?1:0;
+  tt.cornerRadius=8; tt.padding=10; tt.boxPadding=4;
 }
+function applyTheme(t,save){
+  document.documentElement.setAttribute("data-theme",t);
+  if(save){ try{ localStorage.setItem("mbr-theme",t); }catch(e){} }
+  var b=document.getElementById("theme-btn"); if(b){ b.textContent=t==="dark"?"☀":"☾"; b.title=t==="dark"?"Світла тема":"Темна тема"; }
+  var m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=t==="dark"?"#0D1018":"#4F46E5";
+  applyChartTheme();
+  if(window.Chart&&Chart.instances) Object.keys(Chart.instances).forEach(function(k){ try{ Chart.instances[k].update(); }catch(e){} });
+}
+function toggleTheme(){ applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark",true); }
+(function(){
+  var saved=null; try{ saved=localStorage.getItem("mbr-theme"); }catch(e){}
+  applyTheme(document.documentElement.getAttribute("data-theme")||"light",false);
+  if(window.matchMedia){   // follow the system theme until you pick one yourself
+    var mq=matchMedia("(prefers-color-scheme: dark)"), fn=function(e){ var s2=null; try{ s2=localStorage.getItem("mbr-theme"); }catch(x){} if(s2!=="light"&&s2!=="dark") applyTheme(e.matches?"dark":"light",false); };
+    if(mq.addEventListener) mq.addEventListener("change",fn);
+  }
+})();
 var CONFIGS = {
   "1.00": {
     label: "MBR $1",
@@ -572,7 +612,7 @@ function renderHist(pre) {
     var item=h[i];
     html+="<div class=\"card\" style=\"margin-bottom:6px;padding:.75rem\">";
     html+="<div style=\"font-size:13px;font-weight:500\">"+escH(item.q.substring(0,90))+"</div>";
-    html+="<div style=\"font-size:11px;color:#9CA3AF;margin-top:2px\">"+item.time+"</div>";
+    html+="<div style=\"font-size:11px;color:var(--faint);margin-top:2px\">"+item.time+"</div>";
     html+="<button class=\"btn\" style=\"font-size:11px;padding:.2rem .6rem;margin-top:4px\" onclick=\"expandHist('"+pre+"',"+i+")\">&#8599;</button>";
     html+="</div>";
   }
@@ -1096,17 +1136,17 @@ function renderRangesTab(){
   if(rgSpot==="open"){
     var bands=RG_BANDS.filter(function(b){return rgOpenAvail(b[0]).length>0;});
     if(!bands.some(function(b){return b[0]===rgBand;})) rgBand=bands[0][0];
-    html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem\"><span style=\"font-size:12px;color:#6B7280;min-width:46px\">Стек:</span>"+
+    html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem\"><span style=\"font-size:12px;color:var(--muted);min-width:46px\">Стек:</span>"+
       bands.map(function(b){return "<button class=\"btn"+(b[0]===rgBand?" btn-primary":"")+"\" onclick=\"rgPickBand('"+b[0]+"')\">"+b[1]+"</button>";}).join("")+"</div>";
     var cur=rgChartFor(rgBand,rgPos);   // rgPos stays what you picked (SB/HJ survive a stack change); cur.hero is the position actually shown
-    html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.75rem\"><span style=\"font-size:12px;color:#6B7280;min-width:46px\">Позиція:</span>"+
+    html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.75rem\"><span style=\"font-size:12px;color:var(--muted);min-width:46px\">Позиція:</span>"+
       rgOpenAvail(rgBand).map(function(c){ var sc=rgChartFor(rgBand,c.pos).chart; return "<button class=\"btn"+(c.pos===cur.hero?" btn-primary":"")+"\" onclick=\"rgPickPos('"+c.pos+"')\">"+c.pos+(sc.pct?" · "+sc.pct+"%":"")+"</button>"; }).join("")+"</div>";
   } else {
     var charts=RG.doc.charts.filter(function(c){return c.spot==="bbdef";});
     if(!rgChart||!RG.by[rgChart]||RG.by[rgChart].spot!=="bbdef") rgChart=charts[0].id;
     html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem\">"+charts.map(function(c){return "<button class=\"btn"+(c.id===rgChart?" btn-primary":"")+"\" onclick=\"rgPickChart('"+c.id+"')\">"+rgChartLabel(c)+"</button>";}).join("")+"</div>";
   }
-  html+="<div id=\"rg-info\" style=\"font-size:12px;color:#6B7280;margin-bottom:.6rem\"></div>"+
+  html+="<div id=\"rg-info\" style=\"font-size:12px;color:var(--muted);margin-bottom:.6rem\"></div>"+
     "<label style=\"font-size:12px;display:flex;gap:6px;align-items:center;margin-bottom:.75rem\"><input type=\"checkbox\" id=\"rg-mine\" onchange=\"rgDraw()\""+(rgMine?" checked":"")+"> Показати мою гру (спершу запустіть аудит у вкладці «Аудит»)</label>"+
     "<div id=\"rg-grid\" style=\"display:grid;grid-template-columns:repeat(13,1fr);gap:2px;max-width:640px;font-family:monospace\"></div>"+
     "<div style=\"margin-top:.9rem\"><button class=\"btn btn-danger\" style=\"font-size:11px\" onclick=\"rgRemove()\">Видалити діапазони з браузера</button></div>";
@@ -1120,12 +1160,12 @@ function rgDraw(){
   var html="", r, k;
   for(r=0;r<13;r++) for(k=0;k<13;k++){
     var nc=r===k?RG_RANKS[r]+RG_RANKS[r]:(r<k?RG_RANKS[r]+RG_RANKS[k]+"s":RG_RANKS[k]+RG_RANKS[r]+"o");
-    var code=c.grid.charAt(r*13+k), bg=RG_COL[code]||"#EEF0F4", fg=RG_COL[code]?"#fff":"#aaa", p=per[nc], sub="", bd="";
+    var code=c.grid.charAt(r*13+k), bg=RG_COL[code]||"var(--cell-off)", fg=RG_COL[code]?"#fff":"var(--faint)", p=per[nc], sub="", bd="";
     if(p){ sub="<div style=\"font-size:8px;opacity:.9\">"+(p.n-p.bad)+"/"+p.n+"</div>"; if(p.bad) bd="box-shadow:inset 0 0 0 3px #FFD400;"; }
     html+="<div style=\"background:"+bg+";color:"+fg+";"+bd+"display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;border-radius:3px;font-size:10px;line-height:1.1\" title=\""+nc+" — "+(codes[code]||code)+(p?" · за еталоном "+(p.n-p.bad)+" з "+p.n:"")+"\">"+nc+sub+"</div>";
   }
   g.innerHTML=html;
-  var legend=Object.keys(codes).map(function(kk){return "<span style=\"display:inline-flex;align-items:center;gap:4px;margin-right:12px\"><span style=\"width:11px;height:11px;border-radius:2px;background:"+(RG_COL[kk]||"#EEF0F4")+";border:1px solid #D1D5DB\"></span>"+codes[kk]+"</span>";}).join("");
+  var legend=Object.keys(codes).map(function(kk){return "<span style=\"display:inline-flex;align-items:center;gap:4px;margin-right:12px\"><span style=\"width:11px;height:11px;border-radius:2px;background:"+(RG_COL[kk]||"var(--cell-off)")+";border:1px solid var(--line-2)\"></span>"+codes[kk]+"</span>";}).join("");
   var info=$e("rg-info");
   if(info) info.innerHTML=legend+"<div style=\"margin-top:4px\">"+(sh.shifted?"<strong>Стек 15–25bb: для позиції "+sh.hero+" беремо діапазон "+c.pos+"</strong> (на одну позицію раніше, так само рахує аудит).":(sp.note||""))+(c.stackAssumed?" Межі стека — припущення.":"")+
     (rgMine?(afRes.length?" Жовта рамка: у цій руці були відхилення від еталона; «k/n» — скільки разів ви зіграли за еталоном.":" <strong>Аудит ще не запущено.</strong>"):"")+"</div>";
@@ -1260,7 +1300,7 @@ function renderAuditTab(){
   if(!RG){ el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px\">Спершу завантажте діапазони у вкладці «Ranges».</div>"; return; }
   el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:.875rem\">Для кожної роздачі програма визначає спот (опен: від 25bb за своєю позицією, 15–25bb за діапазоном на одну позицію раніше; пуш/фолд при стеку до 15bb; захист BB проти одного рейза), дивиться на вашу руку в діаграмі й порівнює з тим, що ви зробили. «Відхилення» не завжди помилка: діаграми не враховують ICM і бавнті. Дії після 3-бета й споти без діаграми не оцінюються.</div>"+
     "<div style=\"display:flex;gap:8px;align-items:center;flex-wrap:wrap\"><button class=\"btn btn-primary\" onclick=\"runAudit()\">▶ Запустити аудит (вибрані місяці)</button>"+
-    "<select id=\"af-stage\" onchange=\"afRender()\"><option value=\"all\">Rush + Фінал</option><option value=\"rush\">Тільки Rush</option><option value=\"final\">Тільки Фінал</option></select><span id=\"af-prog\" style=\"font-size:12px;color:#6B7280\"></span></div>"+
+    "<select id=\"af-stage\" onchange=\"afRender()\"><option value=\"all\">Rush + Фінал</option><option value=\"rush\">Тільки Rush</option><option value=\"final\">Тільки Фінал</option></select><span id=\"af-prog\" style=\"font-size:12px;color:var(--muted)\"></span></div>"+
     "<div id=\"af-res\" style=\"margin-top:.875rem\"></div>";
   if(afRes.length||afSkip.length) afRender();
 }
@@ -1283,19 +1323,19 @@ function afRender(){
   order.sort(function(a,b){ var x=groups[a],y=groups[b]; return (spotOrder.indexOf(x.spot)-spotOrder.indexOf(y.spot))||(posOrder.indexOf(x.pos)-posOrder.indexOf(y.pos)); });
   html+="<div class=\"sec-l\">По спотах і позиціях</div><div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:520px;margin-bottom:1rem\"><thead><tr><th>Спот</th><th>Позиція</th><th>Рук</th><th>За еталоном</th><th>Відхилення</th></tr></thead><tbody>"+
     order.map(function(k){ var g=groups[k], p=Math.round(g.ok/g.n*100);
-      return "<tr><td>"+AF_SPOT[g.spot]+"</td><td>"+g.pos+(g.approx?" ≈":"")+"</td><td>"+g.n+"</td><td><span class=\""+(p>=80?"c-green":p>=60?"c-amber":"c-red")+"\">"+p+"%</span></td><td style=\"font-size:11px;color:#6B7280\">"+
+      return "<tr><td>"+AF_SPOT[g.spot]+"</td><td>"+g.pos+(g.approx?" ≈":"")+"</td><td>"+g.n+"</td><td><span class=\""+(p>=80?"c-green":p>=60?"c-amber":"c-red")+"\">"+p+"%</span></td><td style=\"font-size:11px;color:var(--muted)\">"+
         Object.keys(g.kinds).sort(function(a,b){return g.kinds[b]-g.kinds[a];}).map(function(kd){return AF_KIND[g.spot][kd]+": "+g.kinds[kd];}).join("; ")+"</td></tr>"; }).join("")+"</tbody></table></div>";
   // deviations ranking with hand lists
   var dev={}, dk=[];
   R.forEach(function(r){ if(r.ok) return; var k=r.spot+"|"+r.pos+"|"+r.kind; if(!dev[k]){dev[k]=[];dk.push(k);} dev[k].push(r); });
   dk.sort(function(a,b){return dev[b].length-dev[a].length;});
   html+="<div class=\"sec-l\">Найчастіші відхилення (клік по руці відкриє її)</div>";
-  if(!dk.length) html+="<p style=\"color:#6B7280\">Відхилень не знайдено.</p>";
+  if(!dk.length) html+="<p style=\"color:var(--muted)\">Відхилень не знайдено.</p>";
   dk.slice(0,12).forEach(function(k){
     var list=dev[k], f=list[0], sp=RG.doc.spots[f.spot].codes;
     html+="<details style=\"margin-bottom:6px\"><summary style=\"cursor:pointer;font-size:13px\"><strong>"+list.length+"×</strong> "+AF_SPOT[f.spot]+" · "+f.pos+(f.approx?" ≈":"")+" — "+AF_KIND[f.spot][f.kind]+"</summary><div style=\"margin-top:6px\">"+
       list.slice(0,25).map(function(r){ return "<div class=\"hi\" onclick=\"openHand('"+r.id+"')\"><div><div class=\"hi-name\">"+(r.cards?"["+r.cards+"] ":"")+"("+r.hand+") <span class=\""+r.stage+"\">"+r.stage.toUpperCase()+"</span></div>"+
-        "<div class=\"hi-meta\">стек "+r.stack+"bb · еталон: "+(sp[r.rec]||r.rec)+" · ви: "+AF_ACT[r.act]+"</div></div></div>"; }).join("")+(list.length>25?"<div style=\"font-size:11px;color:#9CA3AF;margin-top:4px\">…і ще "+(list.length-25)+"</div>":"")+"</div></details>";
+        "<div class=\"hi-meta\">стек "+r.stack+"bb · еталон: "+(sp[r.rec]||r.rec)+" · ви: "+AF_ACT[r.act]+"</div></div></div>"; }).join("")+(list.length>25?"<div style=\"font-size:11px;color:var(--faint);margin-top:4px\">…і ще "+(list.length-25)+"</div>":"")+"</div></details>";
   });
   // coverage gaps
   var rs={}; S.forEach(function(s){ rs[s.reason]=(rs[s.reason]||0)+1; });
@@ -1423,8 +1463,8 @@ function renderAllin(rs){
   html+="<div style=\"position:relative;height:200px;margin-bottom:1rem\"><canvas id=\"ai-chart\"></canvas></div>";
   var bad=rs.filter(function(r){return r.luckBB<0;}).sort(function(a,b){return a.luckBB-b.luckBB;}).slice(0,8);
   var good=rs.filter(function(r){return r.luckBB>0;}).sort(function(a,b){return b.luckBB-a.luckBB;}).slice(0,8);
-  html+="<div class=\"two-col\"><div><div class=\"sec-l\" style=\"color:#DC2626\">Найбільше не пощастило</div>"+(bad.map(function(r){return aiRowHtml(r,true);}).join("")||"<p style=\"color:#6B7280\">&mdash;</p>")+"</div>"+
-    "<div><div class=\"sec-l\" style=\"color:#059669\">Найбільше пощастило</div>"+(good.map(function(r){return aiRowHtml(r,true);}).join("")||"<p style=\"color:#6B7280\">&mdash;</p>")+"</div></div>";
+  html+="<div class=\"two-col\"><div><div class=\"sec-l\" style=\"color:var(--bad)\">Найбільше не пощастило</div>"+(bad.map(function(r){return aiRowHtml(r,true);}).join("")||"<p style=\"color:var(--muted)\">&mdash;</p>")+"</div>"+
+    "<div><div class=\"sec-l\" style=\"color:var(--ok)\">Найбільше пощастило</div>"+(good.map(function(r){return aiRowHtml(r,true);}).join("")||"<p style=\"color:var(--muted)\">&mdash;</p>")+"</div></div>";
   el.innerHTML=html;
   var sorted=rs.slice().sort(function(a,b){return a.date-b.date;}), run=0;
   var data=sorted.map(function(r){ run+=r.luckBB; return parseFloat(run.toFixed(1)); });
@@ -1432,8 +1472,8 @@ function renderAllin(rs){
   aiChart=new Chart($e("ai-chart").getContext("2d"),{type:"line",
     data:{labels:data.map(function(_,i){return i+1;}),datasets:[{label:"Cumulative luck (bb)",data:data,borderColor:"#D97706",backgroundColor:"rgba(217,119,6,0.10)",fill:true,borderWidth:2,pointRadius:data.length>150?0:2,tension:0.25}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){return "All-in #"+it[0].label;},label:function(it){return (it.raw>=0?"+":"")+it.raw+"bb luck";}}}},
-      scales:{x:{title:{display:true,text:"All-in showdown #",font:{size:11},color:"#9CA3AF"},ticks:{maxTicksLimit:10,font:{size:10},color:"#9CA3AF"},grid:{display:false}},
-              y:{title:{display:true,text:"Cumulative luck (bb)",font:{size:11},color:"#9CA3AF"},ticks:{font:{size:10},color:"#9CA3AF"},grid:{color:"rgba(17,24,39,0.06)"}}}}});
+      scales:{x:{title:{display:true,text:"All-in showdown #",font:{size:11},color:CHC("--faint")},ticks:{maxTicksLimit:10,font:{size:10},color:CHC("--faint")},grid:{display:false}},
+              y:{title:{display:true,text:"Cumulative luck (bb)",font:{size:11},color:CHC("--faint")},ticks:{font:{size:10},color:CHC("--faint")},grid:{color:CHC("--grid")}}}}});
 }
 
 // open a hand's detail from anywhere (switches to Hand History → Hands)
@@ -1464,9 +1504,9 @@ function openTournament(id){
   var t=allRT.find(function(x){return x.id===id;}); if(!t) return;
   var hs=HH.filter(function(h){return h.tid===id;}).sort(function(a,b){return (a.date-b.date)||(parseInt(a.id.slice(2),10)-parseInt(b.id.slice(2),10));});
   var net=t.prize-t.buyin-t.rake-t.bountyPool, el=$e("res-td");
-  var html="<div class=\"card\" style=\"border-color:#4F46E5\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:.75rem\"><div>"+
+  var html="<div class=\"card\" style=\"border-color:var(--accent)\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:.75rem\"><div>"+
     "<div class=\"card-hdr\" style=\"margin:0 0 4px\">Tournament #"+t.id+"</div>"+
-    "<div style=\"font-size:12px;color:#6B7280;font-family:monospace\">"+(t.date?new Date(t.date).toLocaleString():"--")+" &middot; buy-in $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div></div>"+
+    "<div style=\"font-size:12px;color:var(--muted);font-family:monospace\">"+(t.date?new Date(t.date).toLocaleString():"--")+" &middot; buy-in $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div></div>"+
     "<button class=\"btn\" onclick=\"closeTournament()\">&times; Close</button></div>"+
     "<div style=\"display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem\">"+pill(t.itm?"p-blue":t.madeFT?"p-green":"p-gray",t.place?(t.place+"°"+(t.itm?" TOP3":t.madeFT?" FT":"")):"Rush bust")+
     pill("p-gray","prize $"+t.prize.toFixed(2))+(t.fixedPrize>0?pill("p-blue","fixed $"+t.fixedPrize.toFixed(2)):"")+(t.bountyEarned>0?pill("p-green","bounty $"+t.bountyEarned.toFixed(2)):"")+
@@ -1486,16 +1526,16 @@ function openTournament(id){
     "</div><div><div class=\"sec-l\">Bounty envelopes (reconstructed)</div>";
   if(bnt){
     var sure=Object.keys(bnt.g).filter(function(k){return bnt.g[k]>0;}).map(function(k){return (bnt.g[k]>1?bnt.g[k]+"&times;":"")+tdFmtTier(+k);}).join(" + ");
-    html+="<div style=\"font-size:13px;line-height:1.7\">Guaranteed: <strong>"+(sure||"&mdash;")+"</strong><br><span style=\"font-size:12px;color:#6B7280\">"+bnt.n+" possible combination(s) for "+bnt.k+" knockouts"+(bnt.extended?" (HH under-detected eliminations)":"")+": "+
+    html+="<div style=\"font-size:13px;line-height:1.7\">Guaranteed: <strong>"+(sure||"&mdash;")+"</strong><br><span style=\"font-size:12px;color:var(--muted)\">"+bnt.n+" possible combination(s) for "+bnt.k+" knockouts"+(bnt.extended?" (HH under-detected eliminations)":"")+": "+
       bnt.combos.map(function(c){return c.map(tdFmtTier).join(" + ");}).join(" &nbsp;|&nbsp; ")+(bnt.n>3?" &hellip;":"")+"</span></div>";
-  } else html+="<div style=\"font-size:12px;color:#6B7280\">"+(t.bountyEarned>0?"Could not reconstruct from known knockouts.":"No bounty earned.")+"</div>";
+  } else html+="<div style=\"font-size:12px;color:var(--muted)\">"+(t.bountyEarned>0?"Could not reconstruct from known knockouts.":"No bounty earned.")+"</div>";
   html+="</div></div>";
   html+="<div class=\"sec-l\">Hero stack by hand (bb)</div>"+
-    "<div style=\"display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#374151;margin:-.4rem 0 .5rem\">"+
-    "<span><span style=\"display:inline-block;width:12px;height:12px;border-radius:50%;background:#DC2626;border:2px solid #fff;box-shadow:0 0 0 1px #DC2626;vertical-align:-2px\"></span> Knockout (you eliminated a player)</span>"+
+    "<div style=\"display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-2);margin:-.4rem 0 .5rem\">"+
+    "<span><span style=\"display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--bad);border:2px solid #fff;box-shadow:0 0 0 1px var(--bad);vertical-align:-2px\"></span> Knockout (you eliminated a player)</span>"+
     "<span><span style=\"display:inline-block;width:8px;height:8px;border-radius:50%;background:#F59E0B;vertical-align:0\"></span> Final table</span>"+
-    "<span><span style=\"display:inline-block;width:8px;height:8px;border-radius:50%;background:#4F46E5;vertical-align:0\"></span> Rush</span>"+
-    "<span style=\"color:#888\">Dot = your stack at the start of the hand</span></div>"+
+    "<span><span style=\"display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);vertical-align:0\"></span> Rush</span>"+
+    "<span style=\"color:var(--faint)\">Dot = your stack at the start of the hand</span></div>"+
     "<div style=\"position:relative;height:220px;margin-bottom:1rem\"><canvas id=\"td-chart\"></canvas></div>";
   if(kos.length) html+="<div class=\"sec-l\">Knockout hands</div>"+kos.map(function(h){return "<div class=\"hi\" onclick=\"openHand('"+h.id+"')\"><div><div class=\"hi-name\">["+h.cards+"] ("+h.normCards+")</div><div class=\"hi-meta\">"+h.pos+" &middot; "+h.stackBB+"bb &middot; "+(h.board||"preflop")+"</div></div><div class=\"hw\" style=\"font-family:monospace\">+"+h.wonBB+"bb &#128176;</div></div>";}).join("")+"<div style=\"height:.875rem\"></div>";
   if(ais.length) html+="<div class=\"sec-l\">All-in showdowns</div>"+ais.map(function(r){return aiRowHtml(r,false);}).join("");
@@ -1503,7 +1543,7 @@ function openTournament(id){
   el.innerHTML=html; el.style.display="block"; el.scrollIntoView({behavior:"smooth",block:"nearest"});
   tdChart=destroyChart(tdChart);
   tdChart=new Chart($e("td-chart").getContext("2d"),{type:"line",
-    data:{labels:hs.map(function(_,i){return i+1;}),datasets:[{data:hs.map(function(h){return h.stackBB;}),borderColor:"#4F46E5",borderWidth:1.5,fill:false,tension:0.15,
+    data:{labels:hs.map(function(_,i){return i+1;}),datasets:[{data:hs.map(function(h){return h.stackBB;}),borderColor:CHC("--accent"),borderWidth:1.5,fill:false,tension:0.15,
       pointRadius:hs.map(function(h){return h.knockout?9:3;}),pointHoverRadius:hs.map(function(h){return h.knockout?11:5;}),
       pointBackgroundColor:hs.map(function(h){return h.knockout?"#DC2626":(h.stage==="final"?"#F59E0B":"#4F46E5");}),
       pointBorderColor:hs.map(function(h){return h.knockout?"#fff":(h.stage==="final"?"#4F46E5":"#4F46E5");}),
@@ -1525,7 +1565,7 @@ function openTournament(id){
       });
     }}],
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){return "Hand "+it[0].label;},label:function(it){var h=hs[it.dataIndex]; return h.stackBB+"bb · "+h.pos+" · ["+h.cards+"]"+(h.knockout?" · KO":"");}}}},
-      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},color:"#9CA3AF"},grid:{display:false}},y:{beginAtZero:true,grace:"22%",ticks:{font:{size:10},color:"#9CA3AF"},grid:{color:"rgba(17,24,39,0.06)"}}}}});
+      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},color:CHC("--faint")},grid:{display:false}},y:{beginAtZero:true,grace:"22%",ticks:{font:{size:10},color:CHC("--faint")},grid:{color:CHC("--grid")}}}}});
 }
 
 // ============================================================
@@ -1558,8 +1598,8 @@ function refreshHHStats() {
     "<div><div class=\"sec-l\">Play style</div>"+
     sr("VPIP",s.all.vpP+"% "+pill(vCls,vLbl))+
     sr("PFR",s.all.pfP+"% "+pill(pCls,pLbl))+
-    sr("3bet %",s.all.tbP+"% <span style=\"font-size:11px;color:#9CA3AF\">(norm 5-10%)</span>")+
-    sr("Fold to 3bet",s.all.f3bP+"% <span style=\"font-size:11px;color:#9CA3AF\">(norm 45-65%)</span>")+
+    sr("3bet %",s.all.tbP+"% <span style=\"font-size:11px;color:var(--faint)\">(norm 5-10%)</span>")+
+    sr("Fold to 3bet",s.all.f3bP+"% <span style=\"font-size:11px;color:var(--faint)\">(norm 45-65%)</span>")+
     sr("CBet",s.all.cbP+"%")+"</div>"+
     "<div><div class=\"sec-l\">By stage</div>"+
     sr("<span class=\"rush\">RUSH</span> hands",s.rushS.n)+
@@ -1592,7 +1632,7 @@ function refreshHHStats() {
     sr("3bet/F3b",s.finalS.tbP+"%/"+s.finalS.f3bP+"%")+sr("Win rate",s.finalS.wr+"%")+
     sr("Avg stack",s.finalS.avgStack+" BB")+sr("Hands &lt;15 BB",shortH)+
     "</div><div><div class=\"sec-l\">Push/fold</div>"+
-    "<div style=\"font-size:13px;line-height:2.2;color:#6B7280\">"+
+    "<div style=\"font-size:13px;line-height:2.2;color:var(--muted)\">"+
     "<div>"+pill("p-red","&lt;10 BB")+" push/fold mandatory</div>"+
     "<div>"+pill("p-amber","10-15 BB")+" mostly push/fold</div>"+
     "<div>"+pill("p-blue","15-25 BB")+" standard raises</div>"+
@@ -1606,18 +1646,18 @@ function refreshHHStats() {
     var wr=Math.round(d.w/d.n*100), pf=Math.round(d.pf/d.n*100);
     var tb=d.tbOpp>0?Math.round(d.tb/d.tbOpp*100):0, f3b=d.f3bOpp>0?Math.round(d.f3b/d.f3bOpp*100):0;
     ph+="<div style=\"margin-bottom:8px\"><div style=\"display:flex;align-items:center;gap:8px;margin-bottom:3px\">"+
-      "<div class=\"bl\">"+pp+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+wr+"%;background:#4F46E5\"></div></div>"+
+      "<div class=\"bl\">"+pp+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+wr+"%;background:var(--accent)\"></div></div>"+
       "<div class=\"bv\">"+wr+"%</div><div class=\"be\">"+d.n+"</div></div>"+
-      "<div style=\"font-size:11px;color:#6B7280;font-family:monospace;padding-left:128px\">PFR "+pf+"% &middot; 3bet "+tb+"% &middot; F3b "+f3b+"%</div></div>";
+      "<div style=\"font-size:11px;color:var(--muted);font-family:monospace;padding-left:128px\">PFR "+pf+"% &middot; 3bet "+tb+"% &middot; F3b "+f3b+"%</div></div>";
   }
-  $e("hh-pos-c").innerHTML=ph||"<p style=\"color:#6B7280\">Not enough data</p>";
+  $e("hh-pos-c").innerHTML=ph||"<p style=\"color:var(--muted)\">Not enough data</p>";
 
   var allCards=Object.entries(s.cardStats).filter(function(e){return e[1].n>=2;});
   var topWin=allCards.filter(function(e){return e[1].netBB>0;}).sort(function(a,b){return b[1].netBB-a[1].netBB;}).slice(0,15);
   var topLoss=allCards.filter(function(e){return e[1].netBB<0;}).sort(function(a,b){return a[1].netBB-b[1].netBB;}).slice(0,15);
-  var wHtml=topWin.map(function(e){return sr("<span style=\"font-family:monospace;font-weight:500\">"+e[0]+"</span>","<span class=\"c-green\">+"+e[1].netBB.toFixed(1)+"bb</span> <span style=\"font-size:11px;color:#9CA3AF\">"+e[1].n+"x WR"+Math.round(e[1].w/e[1].n*100)+"%</span>");}).join("");
-  var lHtml=topLoss.map(function(e){return sr("<span style=\"font-family:monospace;font-weight:500\">"+e[0]+"</span>","<span class=\"c-red\">"+e[1].netBB.toFixed(1)+"bb</span> <span style=\"font-size:11px;color:#9CA3AF\">"+e[1].n+"x WR"+Math.round(e[1].w/e[1].n*100)+"%</span>");}).join("");
-  $e("hh-cards-c").innerHTML="<div class=\"two-col\"><div><div class=\"sec-l\" style=\"color:#059669\">Top profitable</div>"+(wHtml||"<p style=\"color:#6B7280\">Not enough</p>")+"</div><div><div class=\"sec-l\" style=\"color:#DC2626\">Top losing</div>"+(lHtml||"<p style=\"color:#6B7280\">Not enough</p>")+"</div></div>";
+  var wHtml=topWin.map(function(e){return sr("<span style=\"font-family:monospace;font-weight:500\">"+e[0]+"</span>","<span class=\"c-green\">+"+e[1].netBB.toFixed(1)+"bb</span> <span style=\"font-size:11px;color:var(--faint)\">"+e[1].n+"x WR"+Math.round(e[1].w/e[1].n*100)+"%</span>");}).join("");
+  var lHtml=topLoss.map(function(e){return sr("<span style=\"font-family:monospace;font-weight:500\">"+e[0]+"</span>","<span class=\"c-red\">"+e[1].netBB.toFixed(1)+"bb</span> <span style=\"font-size:11px;color:var(--faint)\">"+e[1].n+"x WR"+Math.round(e[1].w/e[1].n*100)+"%</span>");}).join("");
+  $e("hh-cards-c").innerHTML="<div class=\"two-col\"><div><div class=\"sec-l\" style=\"color:var(--ok)\">Top profitable</div>"+(wHtml||"<p style=\"color:var(--muted)\">Not enough</p>")+"</div><div><div class=\"sec-l\" style=\"color:var(--bad)\">Top losing</div>"+(lHtml||"<p style=\"color:var(--muted)\">Not enough</p>")+"</div></div>";
 
   var sevBg={high:"a-err",med:"a-amber",ok:"a-ok"};
   var sevPill={high:"p-red",med:"p-amber",ok:"p-green"};
@@ -1689,7 +1729,7 @@ function showHand(id) {
   if(h.knockout) html+=pill("p-green","KNOCKOUT &#128176;");
   html+=pill(h.won?"p-green":"p-red",h.won?"+"+h.wonBB+"bb":"lost");
   var aiR=aiHandResult(h); if(aiR) html+=pill("p-amber","All-in equity "+Math.round(aiR.eq*100)+"% &middot; "+(aiR.luckBB>=0?"+":"")+aiR.luckBB.toFixed(1)+"bb vs EV");
-  html+="</div><pre style=\"background:#F8F9FB;padding:.875rem;border-radius:8px;border:0.5px solid #E7E9EF;max-height:180px;overflow-y:auto;color:#6B7280\">"+escH(h.raw.trim())+"</pre>";
+  html+="</div><pre style=\"background:var(--soft-2);padding:.875rem;border-radius:8px;border:0.5px solid var(--line);max-height:180px;overflow-y:auto;color:var(--muted)\">"+escH(h.raw.trim())+"</pre>";
   html+="<div id=\"oai-"+sid+"\" style=\"margin-top:.75rem\"></div>";
   $e("hh-hdi").innerHTML=html;
   sec.scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -1795,7 +1835,7 @@ function refreshResStatsCore() {
     var v=places[i]||0, pct=total>0?Math.round(v/total*100):0, col=i<=3?"#4F46E5":"#65A30D";
     placeRows+="<div class=\"br\"><div class=\"bl\">"+i+" "+(i<=3?"&#128176;":"")+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+pct+"%;background:"+col+"\"></div></div><div class=\"bv\">"+v+"x</div><div class=\"be\">"+pct+"%</div></div>";
   });
-  if(places[99]) placeRows+="<div class=\"br\"><div class=\"bl\">Rush bust</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+Math.round(places[99]/total*100)+"%;background:#DC2626\"></div></div><div class=\"bv\">"+places[99]+"x</div><div class=\"be\">"+Math.round(places[99]/total*100)+"%</div></div>";
+  if(places[99]) placeRows+="<div class=\"br\"><div class=\"bl\">Rush bust</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+Math.round(places[99]/total*100)+"%;background:var(--bad)\"></div></div><div class=\"bv\">"+places[99]+"x</div><div class=\"be\">"+Math.round(places[99]/total*100)+"%</div></div>";
 
   var bestHtml=best.map(function(t){return sr(pill("p-blue",t.place+"°")+" #"+t.id,"<span class=\"c-green\">+$"+(t.prize-t.buyin-t.rake-t.bountyPool).toFixed(2)+"</span>");}).join("");
 
@@ -1808,10 +1848,10 @@ function refreshResStatsCore() {
     sr("Net profit","<span class=\""+(profit>=0?"c-green":"c-red")+"\">"+(profit>=0?"+":"")+profit.toFixed(2)+"$</span>")+
     sr("ROI","<span class=\""+(roi>=0?"c-green":"c-red")+"\">"+(roi>=0?"+":"")+roi+"%</span>")+
     sr("Avg place",avgPl)+
-    "</div><div><div class=\"sec-l\">Top wins</div>"+(bestHtml||"<p style=\"color:#6B7280\">No ITM</p>")+
+    "</div><div><div class=\"sec-l\">Top wins</div>"+(bestHtml||"<p style=\"color:var(--muted)\">No ITM</p>")+
     "<div class=\"div\"></div><div class=\"sec-l\">FT</div>"+
-    sr("FT rate",ftP+"% <span style=\"font-size:11px;color:#9CA3AF\">(exp 50%)</span>")+
-    sr("FT-TOP3",ftConv+"% <span style=\"font-size:11px;color:#9CA3AF\">(norm 30-35%)</span>")+
+    sr("FT rate",ftP+"% <span style=\"font-size:11px;color:var(--faint)\">(exp 50%)</span>")+
+    sr("FT-TOP3",ftConv+"% <span style=\"font-size:11px;color:var(--faint)\">(norm 30-35%)</span>")+
     "</div></div><div class=\"div\"></div><div class=\"sec-l\">Place distribution</div>"+placeRows;
 
   $e("res-ft-c").innerHTML=
@@ -1822,11 +1862,11 @@ function refreshResStatsCore() {
     sr("Bounty earned","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
     sr("Fixed prizes","<span class=\"c-blue\">$"+fixedTotal.toFixed(2)+"</span>")+
     "</div><div><div class=\"sec-l\">"+cfg().label+" payouts</div>"+
-    "<div style=\"font-size:13px;line-height:2.2;color:#6B7280\">"+
+    "<div style=\"font-size:13px;line-height:2.2;color:var(--muted)\">"+
     "<div>"+pill("p-blue","1&deg; $"+cfg().fixedPrizes[1].toFixed(2))+" + bounties</div>"+
     "<div>"+pill("p-gray","2&deg; $"+cfg().fixedPrizes[2].toFixed(2))+" + bounties</div>"+
     "<div>"+pill("p-gray","3&deg; $"+cfg().fixedPrizes[3].toFixed(2))+" + bounties</div>"+
-    "<div style=\"font-size:12px;color:#9CA3AF\">4-9 bounty only</div>"+
+    "<div style=\"font-size:12px;color:var(--faint)\">4-9 bounty only</div>"+
     "</div></div></div>";
 
   var koByTour2={};
@@ -1881,14 +1921,14 @@ function refreshResStatsCore() {
     var exp=parseFloat((d.prob*nko).toFixed(1));
     var expV=parseFloat((d.val*d.prob*nko).toFixed(2));
     distRows+="<tr><td><strong>"+d.label+"</strong></td><td>"+(d.prob*100).toFixed(4)+"%</td>";
-    distRows+="<td>"+(conf>0?"<strong style=\"color:#059669\">"+conf+"&times;</strong>":"&mdash;")+"</td>";
-    distRows+="<td>"+(conf>0?"<strong style=\"color:#059669\">$"+confEarned.toFixed(2)+"</strong>":"&mdash;")+"</td>";
-    distRows+="<td style=\"color:#9CA3AF\">"+exp+"&times; / $"+expV+"</td></tr>";
+    distRows+="<td>"+(conf>0?"<strong style=\"color:var(--ok)\">"+conf+"&times;</strong>":"&mdash;")+"</td>";
+    distRows+="<td>"+(conf>0?"<strong style=\"color:var(--ok)\">$"+confEarned.toFixed(2)+"</strong>":"&mdash;")+"</td>";
+    distRows+="<td style=\"color:var(--faint)\">"+exp+"&times; / $"+expV+"</td></tr>";
   }
-  distRows+="<tr style=\"border-top:1px solid #D1D5DB\"><td><strong>Total</strong></td><td>&mdash;</td>";
-  distRows+="<td><strong style=\"color:#059669\">"+confirmedTotal+"&times;</strong></td>";
-  distRows+="<td><strong style=\"color:#059669\">$"+confirmedEarned.toFixed(2)+"</strong></td>";
-  distRows+="<td style=\"color:#9CA3AF\">"+nko+"&times; / $"+expTotal.toFixed(2)+"</td></tr>";
+  distRows+="<tr style=\"border-top:1px solid var(--line-2)\"><td><strong>Total</strong></td><td>&mdash;</td>";
+  distRows+="<td><strong style=\"color:var(--ok)\">"+confirmedTotal+"&times;</strong></td>";
+  distRows+="<td><strong style=\"color:var(--ok)\">$"+confirmedEarned.toFixed(2)+"</strong></td>";
+  distRows+="<td style=\"color:var(--faint)\">"+nko+"&times; / $"+expTotal.toFixed(2)+"</td></tr>";
 
   var hhTidSet=new Set(HH.map(function(h){return h.tid;}));
   var bountyTours=RT.filter(function(t){return t.bountyEarned>0;}).length;
@@ -1923,14 +1963,14 @@ function refreshResStatsCore() {
     sr("Actual bounty","<span class=\"c-green\">$"+bountyTotal.toFixed(2)+"</span>")+
     sr("Expected ("+nko+" &times; $"+AVG_BOUNTY_EV+")",nko>0?"$"+expTotal.toFixed(2):"&mdash;")+
     sr("Deviation",nko>0?"<span class=\""+(deviation>=0?"c-green":"c-amber")+"\">"+(deviation>=0?"+":"")+"$"+deviation.toFixed(2)+" ("+(deviationPct>0?"+":"")+deviationPct+"%)</span>":"&mdash;")+
-    "<div style=\"font-size:11px;color:#6B7280;margin-top:.4rem\">Need 500+ knockouts for significance.</div>"+
+    "<div style=\"font-size:11px;color:var(--muted);margin-top:.4rem\">Need 500+ knockouts for significance.</div>"+
     "</div></div>"+
     "<div class=\"div\"></div><div class=\"sec-l\">Distribution by value ("+nko+" KO)</div>"+
     "<div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:480px;margin-bottom:1rem\">"+
     "<thead><tr><th>Value</th><th>Probability</th><th>Confirmed</th><th>Confirmed earned</th><th>Expected</th></tr></thead>"+
     "<tbody>"+distRows+"</tbody></table></div>"+
     (monthRows?"<div class=\"div\"></div><div class=\"sec-l\">Bounty by month</div><table class=\"btable\"><thead><tr><th>Month</th><th>Tournaments</th><th>Bounty</th><th>KO (HH)</th><th>HH coverage</th></tr></thead><tbody>"+monthRows+"</tbody></table>":"")+
-    "<div class=\"div\"></div><p style=\"font-size:12px;color:#6B7280\"><strong>Confirmed</strong> - only mathematically possible combination"+(extendedTourCount>0?" (for "+extendedTourCount+" tournament(s) HH under-detected eliminations, so more knockouts than found in Hand History were assumed to make the math work)":"")+".</p>";
+    "<div class=\"div\"></div><p style=\"font-size:12px;color:var(--muted)\"><strong>Confirmed</strong> - only mathematically possible combination"+(extendedTourCount>0?" (for "+extendedTourCount+" tournament(s) HH under-detected eliminations, so more knockouts than found in Hand History were assumed to make the math work)":"")+".</p>";
 
   renderRL();
 
@@ -1951,10 +1991,10 @@ function refreshResStatsCore() {
     roiRows+="<div class=\"bt\"><div class=\"bf\" style=\"width:"+Math.min(Math.abs(r2),100)+"%;background:"+(r2>=0?"#059669":"#DC2626")+"\"></div></div>";
     roiRows+="<div class=\"bv\" style=\"color:"+(r2>=0?"#059669":"#DC2626")+"\">"+(mp>=0?"+":"")+mp.toFixed(1)+"$</div>";
     roiRows+="<div class=\"be\">ROI"+(r2>0?"+":"")+r2+"%</div>";
-    roiRows+="<div style=\"font-size:10px;color:#6B7280;font-family:monospace;width:110px;text-align:right\">ITM"+Math.round(mv2.itm/mv2.n*100)+"%&middot;"+mv2.n+"t</div></div>";
+    roiRows+="<div style=\"font-size:10px;color:var(--muted);font-family:monospace;width:110px;text-align:right\">ITM"+Math.round(mv2.itm/mv2.n*100)+"%&middot;"+mv2.n+"t</div></div>";
   }
-  $e("res-roi-c").innerHTML=(roiRows?"<p style=\"font-size:12px;color:#6B7280;margin-bottom:.875rem\">Profit by month.</p>"+roiRows:"<p style=\"color:#6B7280\">No dates</p>")+
-    "<div class=\"div\"></div><div style=\"font-size:14px;color:#6B7280\">Total: <strong style=\"font-size:20px;color:"+(profit>=0?"#059669":"#DC2626")+"\">"+(profit>=0?"+":"")+profit.toFixed(2)+"$</strong> &middot; ROI <strong style=\"color:"+(roi>=0?"#059669":"#DC2626")+"\">"+(roi>=0?"+":"")+roi+"%</strong></div>";
+  $e("res-roi-c").innerHTML=(roiRows?"<p style=\"font-size:12px;color:var(--muted);margin-bottom:.875rem\">Profit by month.</p>"+roiRows:"<p style=\"color:var(--muted)\">No dates</p>")+
+    "<div class=\"div\"></div><div style=\"font-size:14px;color:var(--muted)\">Total: <strong style=\"font-size:20px;color:"+(profit>=0?"#059669":"#DC2626")+"\">"+(profit>=0?"+":"")+profit.toFixed(2)+"$</strong> &middot; ROI <strong style=\"color:"+(roi>=0?"#059669":"#DC2626")+"\">"+(roi>=0?"+":"")+roi+"%</strong></div>";
 }
 
 // ============================================================
@@ -1994,17 +2034,17 @@ function renderRL() {
     var koHtml="";
     if(HH.length>0){
       koHtml=ko>0
-        ?"<span style=\"font-size:11px;color:#059669;font-family:monospace;margin-left:6px\">&#128176;"+ko+"KO</span>"
-        :"<span style=\"font-size:11px;color:#D1D5DB;font-family:monospace;margin-left:6px\">0KO</span>";
+        ?"<span style=\"font-size:11px;color:var(--ok);font-family:monospace;margin-left:6px\">&#128176;"+ko+"KO</span>"
+        :"<span style=\"font-size:11px;color:var(--faint);font-family:monospace;margin-left:6px\">0KO</span>";
     }
     html+="<div class=\""+rowCls+"\" style=\"cursor:pointer\" onclick=\"openTournament('"+t.id+"')\">";
     html+="<div>";
     html+="<div style=\"font-size:12px;font-weight:500\">#"+t.id+" "+pill(placeCls,placeLabel)+koHtml+"</div>";
-    html+="<div style=\"font-size:11px;color:#6B7280;font-family:monospace;margin-top:1px\">"+dateStr+" &middot; $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div>";
+    html+="<div style=\"font-size:11px;color:var(--muted);font-family:monospace;margin-top:1px\">"+dateStr+" &middot; $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div>";
     html+="</div>";
     html+="<div style=\"text-align:right;flex-shrink:0\">";
-    if(t.fixedPrize>0) html+="<div style=\"font-size:11px;color:#4F46E5;font-family:monospace\">fixed +$"+t.fixedPrize.toFixed(2)+"</div>";
-    if(t.bountyEarned>0) html+="<div style=\"font-size:11px;color:#059669;font-family:monospace\">bounty +$"+t.bountyEarned.toFixed(2)+"</div>";
+    if(t.fixedPrize>0) html+="<div style=\"font-size:11px;color:var(--accent);font-family:monospace\">fixed +$"+t.fixedPrize.toFixed(2)+"</div>";
+    if(t.bountyEarned>0) html+="<div style=\"font-size:11px;color:var(--ok);font-family:monospace\">bounty +$"+t.bountyEarned.toFixed(2)+"</div>";
     html+="<div class=\""+(net>=0?"hw":"hl")+"\" style=\"font-size:12px;font-family:monospace\">"+(net>=0?"+":"")+net.toFixed(2)+"$</div>";
     html+="</div></div>";
   }
@@ -2089,7 +2129,7 @@ function renderChartCum() {
     type:"line",
     data:{labels:labels,datasets:[{
       label:"Cumulative profit ($)",data:data,
-      backgroundColor:"rgba(79,70,229,0.12)",borderColor:"#4F46E5",
+      backgroundColor:"rgba(79,70,229,0.12)",borderColor:CHC("--accent"),
       borderWidth:2,fill:true,
       pointRadius:RT.length>200?0:2,pointHoverRadius:4,tension:0.3
     }]},
@@ -2099,8 +2139,8 @@ function renderChartCum() {
         label:function(it){return (it.raw>=0?"+":"")+it.raw.toFixed(2)+"$";}
       }}},
       scales:{
-        x:{title:{display:true,text:"Tournament #",font:{size:11},color:"#9CA3AF"},ticks:{maxTicksLimit:12,font:{size:10},color:"#9CA3AF"},grid:{color:"rgba(17,24,39,0.05)"}},
-        y:{title:{display:true,text:"Cumulative profit ($)",font:{size:11},color:"#9CA3AF"},ticks:{font:{size:10},color:"#9CA3AF",callback:function(v){return (v>=0?"+":"")+v+"$";}},grid:{color:"rgba(17,24,39,0.06)"}}
+        x:{title:{display:true,text:"Tournament #",font:{size:11},color:CHC("--faint")},ticks:{maxTicksLimit:12,font:{size:10},color:CHC("--faint")},grid:{color:CHC("--grid")}},
+        y:{title:{display:true,text:"Cumulative profit ($)",font:{size:11},color:CHC("--faint")},ticks:{font:{size:10},color:CHC("--faint"),callback:function(v){return (v>=0?"+":"")+v+"$";}},grid:{color:CHC("--grid")}}
       }
     }
   });
@@ -2133,10 +2173,10 @@ function renderChartProfit() {
         afterLabel:function(it){var m=months[keys[it.dataIndex]]; return "won $"+m.prize.toFixed(2)+" · invested $"+m.inv.toFixed(2)+" · "+m.n+" tournaments";}
       }}},
       scales:{
-        x:{ticks:{font:{size:10},color:"#9CA3AF"},grid:{display:false}},
-        y:{title:{display:true,text:"Profit ($)",font:{size:11},color:"#9CA3AF"},
-          ticks:{font:{size:10},color:"#9CA3AF",callback:function(v){return (v<0?"-":"")+"$"+Math.abs(v);}},
-          grid:{color:"rgba(17,24,39,0.06)"},
+        x:{ticks:{font:{size:10},color:CHC("--faint")},grid:{display:false}},
+        y:{title:{display:true,text:"Profit ($)",font:{size:11},color:CHC("--faint")},
+          ticks:{font:{size:10},color:CHC("--faint"),callback:function(v){return (v<0?"-":"")+"$"+Math.abs(v);}},
+          grid:{color:CHC("--grid")},
           afterDataLimits:function(sc){var mx=Math.max(Math.abs(sc.max),Math.abs(sc.min));sc.max=mx*1.15;sc.min=-mx*0.3;}
         }
       }
@@ -2176,10 +2216,10 @@ function renderChartRoi() {
         label:function(it){return (it.raw>=0?"+":"")+it.raw.toFixed(1)+"%";}
       }}},
       scales:{
-        x:{ticks:{font:{size:10},color:"#9CA3AF"},grid:{display:false}},
-        y:{title:{display:true,text:"ROI (%)",font:{size:11},color:"#9CA3AF"},
-          ticks:{font:{size:10},color:"#9CA3AF",callback:function(v){return v+"%";}},
-          grid:{color:"rgba(17,24,39,0.06)"},
+        x:{ticks:{font:{size:10},color:CHC("--faint")},grid:{display:false}},
+        y:{title:{display:true,text:"ROI (%)",font:{size:11},color:CHC("--faint")},
+          ticks:{font:{size:10},color:CHC("--faint"),callback:function(v){return v+"%";}},
+          grid:{color:CHC("--grid")},
           afterDataLimits:function(s){var mx=Math.max(Math.abs(s.max),Math.abs(s.min));s.max=mx*1.15;s.min=-mx*0.3;}
         }
       }
@@ -2221,10 +2261,10 @@ function renderChartPlace() {
         }}
       },
       scales:{
-        x:{ticks:{font:{size:10},color:"#9CA3AF"},grid:{display:false}},
-        y:{title:{display:true,text:"Count",font:{size:11},color:"#9CA3AF"},
-          ticks:{font:{size:10},color:"#9CA3AF",precision:0},
-          grid:{color:"rgba(17,24,39,0.06)"}
+        x:{ticks:{font:{size:10},color:CHC("--faint")},grid:{display:false}},
+        y:{title:{display:true,text:"Count",font:{size:11},color:CHC("--faint")},
+          ticks:{font:{size:10},color:CHC("--faint"),precision:0},
+          grid:{color:CHC("--grid")}
         }
       }
     }
@@ -2297,5 +2337,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:#9CA3AF;pointer-events:none;z-index:5">v1.8</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.9</div>
 </body></html>
