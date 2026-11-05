@@ -1378,7 +1378,13 @@ function openTournament(id){
       bnt.combos.map(function(c){return c.map(tdFmtTier).join(" + ");}).join(" &nbsp;|&nbsp; ")+(bnt.n>3?" &hellip;":"")+"</span></div>";
   } else html+="<div style=\"font-size:12px;color:#666\">"+(t.bountyEarned>0?"Could not reconstruct from known knockouts.":"No bounty earned.")+"</div>";
   html+="</div></div>";
-  html+="<div class=\"sec-l\">Hero stack by hand (bb)</div><div style=\"position:relative;height:180px;margin-bottom:1rem\"><canvas id=\"td-chart\"></canvas></div>";
+  html+="<div class=\"sec-l\">Hero stack by hand (bb)</div>"+
+    "<div style=\"display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#444;margin:-.4rem 0 .5rem\">"+
+    "<span><span style=\"display:inline-block;width:12px;height:12px;border-radius:50%;background:#A32D2D;border:2px solid #fff;box-shadow:0 0 0 1px #A32D2D;vertical-align:-2px\"></span> Knockout (you eliminated a player)</span>"+
+    "<span><span style=\"display:inline-block;width:8px;height:8px;border-radius:50%;background:#E0A030;vertical-align:0\"></span> Final table</span>"+
+    "<span><span style=\"display:inline-block;width:8px;height:8px;border-radius:50%;background:#185FA5;vertical-align:0\"></span> Rush</span>"+
+    "<span style=\"color:#888\">Dot = your stack at the start of the hand</span></div>"+
+    "<div style=\"position:relative;height:220px;margin-bottom:1rem\"><canvas id=\"td-chart\"></canvas></div>";
   if(kos.length) html+="<div class=\"sec-l\">Knockout hands</div>"+kos.map(function(h){return "<div class=\"hi\" onclick=\"openHand('"+h.id+"')\"><div><div class=\"hi-name\">["+h.cards+"] ("+h.normCards+")</div><div class=\"hi-meta\">"+h.pos+" &middot; "+h.stackBB+"bb &middot; "+(h.board||"preflop")+"</div></div><div class=\"hw\" style=\"font-family:monospace\">+"+h.wonBB+"bb &#128176;</div></div>";}).join("")+"<div style=\"height:.875rem\"></div>";
   if(ais.length) html+="<div class=\"sec-l\">All-in showdowns</div>"+ais.map(function(r){return aiRowHtml(r,false);}).join("");
   html+="</div>";
@@ -1386,9 +1392,28 @@ function openTournament(id){
   tdChart=destroyChart(tdChart);
   tdChart=new Chart($e("td-chart").getContext("2d"),{type:"line",
     data:{labels:hs.map(function(_,i){return i+1;}),datasets:[{data:hs.map(function(h){return h.stackBB;}),borderColor:"#185FA5",borderWidth:1.5,fill:false,tension:0.15,
-      pointRadius:hs.map(function(h){return h.knockout?6:2;}),pointBackgroundColor:hs.map(function(h){return h.knockout?"#A32D2D":(h.stage==="final"?"#E0A030":"#185FA5");})}]},
+      pointRadius:hs.map(function(h){return h.knockout?9:3;}),pointHoverRadius:hs.map(function(h){return h.knockout?11:5;}),
+      pointBackgroundColor:hs.map(function(h){return h.knockout?"#A32D2D":(h.stage==="final"?"#E0A030":"#185FA5");}),
+      pointBorderColor:hs.map(function(h){return h.knockout?"#fff":(h.stage==="final"?"#185FA5":"#185FA5");}),
+      pointBorderWidth:hs.map(function(h){return h.knockout?3:1;})}]},
+    plugins:[{id:"koMarks",afterDatasetsDraw:function(chart){
+      var c=chart.ctx, xs=chart.scales.x, ys=chart.scales.y, a=chart.chartArea, lastX=-999, lvl=0;
+      hs.forEach(function(h,i){
+        if(!h.knockout) return;
+        var x=xs.getPixelForValue(i), y=ys.getPixelForValue(h.stackBB);
+        lvl=(x-lastX<32)?(lvl+1)%3:0; lastX=x;
+        var ty=a.top+lvl*17;
+        c.save();
+        c.strokeStyle="rgba(163,45,45,0.5)"; c.lineWidth=1.5; c.setLineDash([4,3]);
+        c.beginPath(); c.moveTo(x,ty+16); c.lineTo(x,y-10); c.stroke(); c.setLineDash([]);
+        c.fillStyle="#A32D2D"; c.beginPath();
+        if(c.roundRect) c.roundRect(x-14,ty,28,16,4); else c.rect(x-14,ty,28,16);
+        c.fill(); c.fillStyle="#fff"; c.font="bold 10px sans-serif"; c.textAlign="center"; c.textBaseline="middle"; c.fillText("KO",x,ty+8.5);
+        c.restore();
+      });
+    }}],
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){return "Hand "+it[0].label;},label:function(it){var h=hs[it.dataIndex]; return h.stackBB+"bb · "+h.pos+" · ["+h.cards+"]"+(h.knockout?" · KO":"");}}}},
-      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},color:"#999"},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.06)"}}}}});
+      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},color:"#999"},grid:{display:false}},y:{beginAtZero:true,grace:"22%",ticks:{font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.06)"}}}}});
 }
 
 var drChart=null, drLastResult=null;
