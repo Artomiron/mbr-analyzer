@@ -156,6 +156,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
       <button class="st" onclick="hhTab(&#39;cards&#39;,this)">Top hands</button>
       <button class="st" onclick="hhTab(&#39;weak&#39;,this)">Leaks</button>
       <button class="st" onclick="hhTab(&#39;ranges&#39;,this)">📊 Ranges</button>
+      <button class="st" onclick="hhTab(&#39;allin&#39;,this)">🎲 All-in EV</button>
       <button class="st" onclick="hhTab(&#39;ai&#39;,this)">🧮 Рішення</button>
     </div>
     <div id="hhT-ov"><div class="card"><div class="card-hdr">Overall stats</div><div id="hh-ov-c"></div></div></div>
@@ -206,6 +207,14 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
           <div id="rc-legend" style="font-size:12px;color:#666"></div>
         </div>
         <div id="rc-grid" style="display:grid;grid-template-columns:repeat(13,1fr);gap:2px;max-width:640px;font-family:monospace"></div>
+      </div>
+    </div>
+    <div id="hhT-allin" style="display:none">
+      <div class="card">
+        <div class="card-hdr">🎲 All-in EV (справжня еквіті з шоудаунів)</div>
+        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Беруться роздачі, де hero і один суперник відкрили карти в олл-іні до завершення роздачі. Еквіті рахується точно (флоп і тьорн) або симуляцією 2500 розкладів (префлоп, результат стабільний). Luck = фактично отримано &minus; еквіті &times; банк, у bb. Мультивей і побічні банки пропускаються.</div>
+        <button class="btn btn-primary" onclick="runAllin()">▶ Порахувати вибрані місяці</button><span id="ai-prog" style="font-size:12px;color:#666;margin-left:8px"></span>
+        <div id="ai-res" style="margin-top:.875rem"></div>
       </div>
     </div>
     <div id="hhT-ai" style="display:none">
@@ -277,6 +286,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
             <select id="rfS" onchange="renderRL()"><option value="date">Date</option><option value="place">Place</option><option value="prize">Prize</option></select>
           </div>
         </div>
+        <div id="res-td" style="display:none;margin-bottom:.875rem"></div>
         <div class="hlist" id="res-tl"></div>
       </div>
     </div>
@@ -1181,6 +1191,206 @@ function renderRangeChart() {
   }
 }
 
+// ============================================================
+// SECTION: ALL-IN EV (real equity from showdown cards) + TOURNAMENT DRILL-DOWN
+// ============================================================
+var AI_B=371293; // 13^5
+var AI_RK="23456789TJQKA";
+function aiCard(s){ return AI_RK.indexOf(s[0])*4+"cdhs".indexOf(s[1]); }
+function aiStraightHigh(m){ for(var h=12;h>=4;h--){ if(((m>>(h-4))&31)===31) return h; } return (m&0x100F)===0x100F?3:-1; }
+function aiTop(m,n,excl){ var s=0,c=0; for(var r=12;r>=0&&c<n;r--){ if(((m>>r)&1)&&!((excl>>r)&1)){ s=s*13+r; c++; } } while(c<n){ s=s*13; c++; } return s; }
+function aiScore7(cs){
+  var rc=[0,0,0,0,0,0,0,0,0,0,0,0,0], sc=[0,0,0,0], sm=[0,0,0,0], all=0, i, r, s;
+  for(i=0;i<cs.length;i++){ r=cs[i]>>2; s=cs[i]&3; rc[r]++; sc[s]++; sm[s]|=(1<<r); all|=(1<<r); }
+  var fm=0; for(s=0;s<4;s++) if(sc[s]>=5) fm=sm[s];
+  if(fm){ var sf=aiStraightHigh(fm); if(sf>=0) return 8*AI_B+sf; }
+  var q=-1,t=[],p=[];
+  for(r=12;r>=0;r--){ if(rc[r]===4){ if(q<0) q=r; } else if(rc[r]===3) t.push(r); else if(rc[r]===2) p.push(r); }
+  if(q>=0) return 7*AI_B+q*13+aiTop(all,1,1<<q);
+  if(t.length){
+    var pr=-1; if(t.length>1) pr=t[1]; if(p.length&&p[0]>pr) pr=p[0];
+    if(pr>=0) return 6*AI_B+t[0]*13+pr;
+  }
+  if(fm) return 5*AI_B+aiTop(fm,5,0);
+  var sh=aiStraightHigh(all); if(sh>=0) return 4*AI_B+sh;
+  if(t.length) return 3*AI_B+t[0]*169+aiTop(all,2,1<<t[0]);
+  if(p.length>1) return 2*AI_B+p[0]*169+p[1]*13+aiTop(all,1,(1<<p[0])|(1<<p[1]));
+  if(p.length===1) return AI_B+p[0]*2197+aiTop(all,3,1<<p[0]);
+  return aiTop(all,5,0);
+}
+function aiRng(seed){ var a=seed>>>0; return function(){ a=(a+0x6D2B79F5)>>>0; var t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+// hero equity (win=1, tie=0.5) vs one villain; board 0/3/4 known cards. Exact when <=2 cards to come, else Monte Carlo (seeded => stable).
+function aiEq(hc,vc,board,seed){
+  var used={}; hc.concat(vc,board).forEach(function(c){used[c]=1;});
+  var deck=[], c; for(c=0;c<52;c++) if(!used[c]) deck.push(c);
+  var need=5-board.length, tot=0, n=0, a=new Array(7), b=new Array(7), k;
+  for(k=0;k<2;k++){a[k]=hc[k]; b[k]=vc[k];}
+  for(k=0;k<board.length;k++){a[2+k]=board[k]; b[2+k]=board[k];}
+  function put(pos,card){ a[pos]=card; b[pos]=card; }
+  function ev(){ var x=aiScore7(a), y=aiScore7(b); n++; tot+=x>y?1:(x===y?0.5:0); }
+  var base=2+board.length, i, j;
+  if(need===0) ev();
+  else if(need===1){ for(i=0;i<deck.length;i++){ put(base,deck[i]); ev(); } }
+  else if(need===2){ for(i=0;i<deck.length;i++){ put(base,deck[i]); for(j=i+1;j<deck.length;j++){ put(base+1,deck[j]); ev(); } } }
+  else {
+    var rng=aiRng(seed), S=2500, s, d=deck.slice();
+    for(s=0;s<S;s++){
+      for(i=0;i<need;i++){ j=i+Math.floor(rng()*(d.length-i)); var tmp=d[i]; d[i]=d[j]; d[j]=tmp; put(base+i,d[i]); }
+      ev();
+    }
+  }
+  return n?tot/n:0.5;
+}
+// One hand: heads-up all-in where both players' cards were revealed before the runout finished.
+function aiCompute1(h){
+  var raw=h.raw; if(!raw||raw.indexOf(": shows [")<0) return null;
+  var lines=raw.split("\n"), board=[], shows=[], inSD=false, i, ln, m;
+  for(i=0;i<lines.length;i++){
+    ln=lines[i];
+    if(ln.indexOf("*** SHOWDOWN")===0){inSD=true; continue;}
+    if(ln.indexOf("*** SUMMARY")===0) break;
+    m=ln.match(/^\*\*\* (?:FLOP|TURN|RIVER) \*\*\* (.*)$/);
+    if(m){ board=m[1].match(/[2-9TJQKA][cdhs]/g)||board; continue; }
+    m=ln.match(/^(\S+): shows \[([^\]]+)\]/);
+    if(m&&!inSD) shows.push({n:m[1],c:m[2].split(" "),b:board.length});
+  }
+  if(shows.length!==2) return null;
+  var hero=null, vil=null;
+  shows.forEach(function(s){ if(s.n==="Hero") hero=s; else vil=s; });
+  if(!hero||!vil||hero.b!==vil.b||hero.b>4) return null;
+  var fin=(h.board||"").match(/[2-9TJQKA][cdhs]/g)||[]; if(fin.length!==5) return null;
+  var col={}, tot=0, cr=/^(\S+) collected ([\d,]+) from pot/gm, cm;
+  while((cm=cr.exec(raw))){ col[cm[1]]=(col[cm[1]]||0)+ch(cm[2]); tot+=ch(cm[2]); }
+  for(var k in col){ if(k!=="Hero"&&k!==vil.n) return null; }
+  if(!tot) return null;
+  var hc=hero.c.map(aiCard), vc=vil.c.map(aiCard), b0=fin.slice(0,hero.b).map(aiCard);
+  var seed=parseInt((h.id.match(/\d+/)||["1"])[0],10)||1;
+  var eq=aiEq(hc,vc,b0,seed), heroCol=col.Hero||0;
+  return {id:h.id,tid:h.tid,date:h.date,stage:h.stage,bb:h.bb,eq:eq,P:tot,share:heroCol/tot,
+    luckBB:h.bb>0?(heroCol-eq*tot)/h.bb:0,street:hero.b,hc:hero.c.join(" "),vc:vil.c.join(" "),board:fin.join(" ")};
+}
+function aiHandResult(h){
+  if(h._ai!==undefined) return h._ai;
+  var r=null; try{ r=aiCompute1(h); }catch(e){ r=null; }
+  h._ai=r; return r;
+}
+function aiAgg(arr){ var n=arr.length, eq=0, sh=0, lk=0; arr.forEach(function(r){eq+=r.eq; sh+=r.share; lk+=r.luckBB;}); return {n:n,eq:n?eq/n:0,sh:n?sh/n:0,luck:lk}; }
+function aiRowHtml(r,showTour){
+  var res=r.share>=0.99?"won":(r.share<=0.01?"lost":"split");
+  return "<div class=\"hi\" onclick=\"openHand('"+r.id+"')\"><div><div class=\"hi-name\">["+r.hc+"] vs ["+r.vc+"] <span class=\""+r.stage+"\">"+r.stage.toUpperCase()+"</span></div>"+
+    "<div class=\"hi-meta\">"+(r.street===0?"preflop":r.street===3?"flop":"turn")+" all-in &middot; board "+r.board+" &middot; equity "+Math.round(r.eq*100)+"% &middot; "+res+(showTour?" &middot; #"+r.tid:"")+"</div></div>"+
+    "<div style=\"font-size:13px;font-family:monospace;flex-shrink:0;font-weight:500;color:"+(r.luckBB>=0?"#0F6E56":"#A32D2D")+"\">"+(r.luckBB>=0?"+":"")+r.luckBB.toFixed(1)+"bb</div></div>";
+}
+var aiChart=null;
+async function runAllin(){
+  var hands=filteredHH().filter(function(h){return h.raw&&h.raw.indexOf(": shows [")>-1;});
+  var out=[], i, r;
+  $e("ai-res").innerHTML="";
+  for(i=0;i<hands.length;i++){
+    r=aiHandResult(hands[i]); if(r) out.push(r);
+    if(i%20===19){ $e("ai-prog").textContent="Рахую "+(i+1)+" / "+hands.length+"..."; await new Promise(function(res){setTimeout(res,0);}); }
+  }
+  $e("ai-prog").textContent="";
+  renderAllin(out);
+}
+function renderAllin(rs){
+  var el=$e("ai-res");
+  if(!rs.length){ el.innerHTML="<div class=\"alert a-info\">Не знайдено олл-ін шоудаунів (hero + один суперник з відкритими картами) у вибраних місяцях.</div>"; return; }
+  var all=aiAgg(rs), rush=aiAgg(rs.filter(function(r){return r.stage==="rush";})), fin=aiAgg(rs.filter(function(r){return r.stage==="final";})),
+      pre=aiAgg(rs.filter(function(r){return r.street===0;})), post=aiAgg(rs.filter(function(r){return r.street>0;}));
+  var lk=function(v){ return "<span class=\""+(v>=0?"c-green":"c-red")+"\">"+(v>=0?"+":"")+v.toFixed(1)+"bb</span>"; };
+  var html="<div class=\"sgrid\" style=\"margin-bottom:1rem\">"+
+    "<div class=\"sc\"><div class=\"sc-l\">Олл-ін шоудаунів</div><div class=\"sc-v c-blue\">"+all.n+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Очікуваний виграш</div><div class=\"sc-v\">"+Math.round(all.eq*100)+"%</div><div class=\"sc-s\">за еквіті</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Фактичний</div><div class=\"sc-v\">"+Math.round(all.sh*100)+"%</div><div class=\"sc-s\">частка банку</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Luck</div><div class=\"sc-v "+(all.luck>=0?"c-green":"c-red")+"\">"+(all.luck>=0?"+":"")+all.luck.toFixed(1)+"bb</div><div class=\"sc-s\">факт &minus; EV</div></div></div>";
+  function row(name,a){ return a.n?"<tr><td>"+name+"</td><td>"+a.n+"</td><td>"+Math.round(a.eq*100)+"%</td><td>"+Math.round(a.sh*100)+"%</td><td>"+lk(a.luck)+"</td></tr>":""; }
+  html+="<div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:420px;margin-bottom:1rem\"><thead><tr><th>Сегмент</th><th>Олл-інів</th><th>Очікув.</th><th>Факт</th><th>Luck</th></tr></thead><tbody>"+
+    row("Усі",all)+row("Rush",rush)+row("Фінал",fin)+row("Префлоп",pre)+row("Постфлоп",post)+
+    row("Банк &lt; 15bb",aiAgg(rs.filter(function(r){return r.P/r.bb<15;})))+row("Банк 15&ndash;40bb",aiAgg(rs.filter(function(r){var q=r.P/r.bb; return q>=15&&q<40;})))+row("Банк &ge; 40bb",aiAgg(rs.filter(function(r){return r.P/r.bb>=40;})))+"</tbody></table></div>";
+  html+="<div style=\"position:relative;height:200px;margin-bottom:1rem\"><canvas id=\"ai-chart\"></canvas></div>";
+  var bad=rs.filter(function(r){return r.luckBB<0;}).sort(function(a,b){return a.luckBB-b.luckBB;}).slice(0,8);
+  var good=rs.filter(function(r){return r.luckBB>0;}).sort(function(a,b){return b.luckBB-a.luckBB;}).slice(0,8);
+  html+="<div class=\"two-col\"><div><div class=\"sec-l\" style=\"color:#A32D2D\">Найбільше не пощастило</div>"+(bad.map(function(r){return aiRowHtml(r,true);}).join("")||"<p style=\"color:#666\">&mdash;</p>")+"</div>"+
+    "<div><div class=\"sec-l\" style=\"color:#0F6E56\">Найбільше пощастило</div>"+(good.map(function(r){return aiRowHtml(r,true);}).join("")||"<p style=\"color:#666\">&mdash;</p>")+"</div></div>";
+  el.innerHTML=html;
+  var sorted=rs.slice().sort(function(a,b){return a.date-b.date;}), run=0;
+  var data=sorted.map(function(r){ run+=r.luckBB; return parseFloat(run.toFixed(1)); });
+  aiChart=destroyChart(aiChart);
+  aiChart=new Chart($e("ai-chart").getContext("2d"),{type:"line",
+    data:{labels:data.map(function(_,i){return i+1;}),datasets:[{label:"Cumulative luck (bb)",data:data,borderColor:"#B36B00",backgroundColor:"rgba(179,107,0,0.10)",fill:true,borderWidth:2,pointRadius:data.length>150?0:2,tension:0.25}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){return "All-in #"+it[0].label;},label:function(it){return (it.raw>=0?"+":"")+it.raw+"bb luck";}}}},
+      scales:{x:{title:{display:true,text:"All-in showdown #",font:{size:11},color:"#999"},ticks:{maxTicksLimit:10,font:{size:10},color:"#999"},grid:{display:false}},
+              y:{title:{display:true,text:"Cumulative luck (bb)",font:{size:11},color:"#999"},ticks:{font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.06)"}}}}});
+}
+
+// open a hand's detail from anywhere (switches to Hand History → Hands)
+function openHand(id){
+  if(!HH.some(function(h){return h.id===id;})) return;
+  switchMain("hh",document.querySelectorAll(".ntab")[0]);
+  if($e("HH-res").style.display==="none") doHH();
+  $e("HH-up").style.display="none"; $e("HH-res").style.display="block";
+  hhTab("hands",document.querySelectorAll("#hh-stabs .st")[4]);
+  showHand(id);
+}
+
+// ---------------- tournament drill-down ----------------
+var tdChart=null;
+function tdFmtTier(c){ var v=c/100; return "$"+(v>=10?String(v):v.toFixed(2)); }
+function tdBounty(t,tko){
+  var cents=Math.round(t.bountyEarned*100); if(cents%25!==0) cents=Math.round(cents/25)*25;
+  if(cents<=0||!tko) return null;
+  var combos=findBountyCombos(cents,tko), k=tko;
+  for(var e=1;e<=8&&!combos.length;e++){ combos=findBountyCombos(cents,tko+e); k=tko+e; }
+  if(!combos.length) return null;
+  var g={}; combos[0].forEach(function(v){g[v]=(g[v]||0)+1;});
+  for(var j=1;j<combos.length;j++){ var cv={}; combos[j].forEach(function(v){cv[v]=(cv[v]||0)+1;}); for(var key in g) g[key]=Math.min(g[key],cv[key]||0); }
+  return {k:k,n:combos.length,combos:combos.slice(0,3),g:g,extended:k!==tko};
+}
+function closeTournament(){ var el=$e("res-td"); el.style.display="none"; el.innerHTML=""; tdChart=destroyChart(tdChart); }
+function openTournament(id){
+  var t=allRT.find(function(x){return x.id===id;}); if(!t) return;
+  var hs=HH.filter(function(h){return h.tid===id;}).sort(function(a,b){return (a.date-b.date)||(parseInt(a.id.slice(2),10)-parseInt(b.id.slice(2),10));});
+  var net=t.prize-t.buyin-t.rake-t.bountyPool, el=$e("res-td");
+  var html="<div class=\"card\" style=\"border-color:#185FA5\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:.75rem\"><div>"+
+    "<div class=\"card-hdr\" style=\"margin:0 0 4px\">Tournament #"+t.id+"</div>"+
+    "<div style=\"font-size:12px;color:#666;font-family:monospace\">"+(t.date?new Date(t.date).toLocaleString():"--")+" &middot; buy-in $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div></div>"+
+    "<button class=\"btn\" onclick=\"closeTournament()\">&times; Close</button></div>"+
+    "<div style=\"display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.875rem\">"+pill(t.itm?"p-blue":t.madeFT?"p-green":"p-gray",t.place?(t.place+"°"+(t.itm?" TOP3":t.madeFT?" FT":"")):"Rush bust")+
+    pill("p-gray","prize $"+t.prize.toFixed(2))+(t.fixedPrize>0?pill("p-blue","fixed $"+t.fixedPrize.toFixed(2)):"")+(t.bountyEarned>0?pill("p-green","bounty $"+t.bountyEarned.toFixed(2)):"")+
+    pill(net>=0?"p-green":"p-red","net "+(net>=0?"+":"")+net.toFixed(2)+"$")+"</div>";
+  if(!hs.length){
+    html+="<div class=\"alert a-amber\" style=\"font-size:12px\">No Hand History loaded for this tournament &mdash; add the month's Hand History to see hands, knockouts and all-ins.</div></div>";
+    el.innerHTML=html; el.style.display="block"; el.scrollIntoView({behavior:"smooth",block:"nearest"}); return;
+  }
+  var fin=hs.filter(function(h){return h.stage==="final";}), kos=fin.filter(function(h){return h.knockout;});
+  var ais=hs.map(aiHandResult).filter(function(r){return r;});
+  var bnt=tdBounty(t,kos.length);
+  html+="<div class=\"two-col\" style=\"margin-bottom:1rem\"><div>"+
+    sr("Hands",hs.length+" (Rush "+(hs.length-fin.length)+" / Final "+fin.length+")")+
+    sr("Knockouts (HH)",kos.length)+
+    sr("All-in showdowns",ais.length)+
+    sr("All-in luck",ais.length?"<span class=\""+(aiAgg(ais).luck>=0?"c-green":"c-red")+"\">"+(aiAgg(ais).luck>=0?"+":"")+aiAgg(ais).luck.toFixed(1)+"bb</span>":"&mdash;")+
+    "</div><div><div class=\"sec-l\">Bounty envelopes (reconstructed)</div>";
+  if(bnt){
+    var sure=Object.keys(bnt.g).filter(function(k){return bnt.g[k]>0;}).map(function(k){return (bnt.g[k]>1?bnt.g[k]+"&times;":"")+tdFmtTier(+k);}).join(" + ");
+    html+="<div style=\"font-size:13px;line-height:1.7\">Guaranteed: <strong>"+(sure||"&mdash;")+"</strong><br><span style=\"font-size:12px;color:#666\">"+bnt.n+" possible combination(s) for "+bnt.k+" knockouts"+(bnt.extended?" (HH under-detected eliminations)":"")+": "+
+      bnt.combos.map(function(c){return c.map(tdFmtTier).join(" + ");}).join(" &nbsp;|&nbsp; ")+(bnt.n>3?" &hellip;":"")+"</span></div>";
+  } else html+="<div style=\"font-size:12px;color:#666\">"+(t.bountyEarned>0?"Could not reconstruct from known knockouts.":"No bounty earned.")+"</div>";
+  html+="</div></div>";
+  html+="<div class=\"sec-l\">Hero stack by hand (bb)</div><div style=\"position:relative;height:180px;margin-bottom:1rem\"><canvas id=\"td-chart\"></canvas></div>";
+  if(kos.length) html+="<div class=\"sec-l\">Knockout hands</div>"+kos.map(function(h){return "<div class=\"hi\" onclick=\"openHand('"+h.id+"')\"><div><div class=\"hi-name\">["+h.cards+"] ("+h.normCards+")</div><div class=\"hi-meta\">"+h.pos+" &middot; "+h.stackBB+"bb &middot; "+(h.board||"preflop")+"</div></div><div class=\"hw\" style=\"font-family:monospace\">+"+h.wonBB+"bb &#128176;</div></div>";}).join("")+"<div style=\"height:.875rem\"></div>";
+  if(ais.length) html+="<div class=\"sec-l\">All-in showdowns</div>"+ais.map(function(r){return aiRowHtml(r,false);}).join("");
+  html+="</div>";
+  el.innerHTML=html; el.style.display="block"; el.scrollIntoView({behavior:"smooth",block:"nearest"});
+  tdChart=destroyChart(tdChart);
+  tdChart=new Chart($e("td-chart").getContext("2d"),{type:"line",
+    data:{labels:hs.map(function(_,i){return i+1;}),datasets:[{data:hs.map(function(h){return h.stackBB;}),borderColor:"#185FA5",borderWidth:1.5,fill:false,tension:0.15,
+      pointRadius:hs.map(function(h){return h.knockout?6:2;}),pointBackgroundColor:hs.map(function(h){return h.knockout?"#A32D2D":(h.stage==="final"?"#E0A030":"#185FA5");})}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){return "Hand "+it[0].label;},label:function(it){var h=hs[it.dataIndex]; return h.stackBB+"bb · "+h.pos+" · ["+h.cards+"]"+(h.knockout?" · KO":"");}}}},
+      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},color:"#999"},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.06)"}}}}});
+}
+
 var drChart=null, drLastResult=null;
 function runDecisionReview() {
   var hands=filteredHH();
@@ -1347,6 +1557,7 @@ function refreshHHStats() {
   var dc=$e("hh-dec-cnt"); if(dc) dc.textContent=hands.length;
   var dr=$e("hh-dec-r"); if(dr) dr.innerHTML="";
   drLastResult=null;
+  var ar=$e("ai-res"); if(ar) ar.innerHTML="";
 }
 
 // ============================================================
@@ -1405,6 +1616,7 @@ function showHand(id) {
   html+="<span class=\""+h.stage+"\">"+h.stage.toUpperCase()+"</span>";
   if(h.knockout) html+=pill("p-green","KNOCKOUT &#128176;");
   html+=pill(h.won?"p-green":"p-red",h.won?"+"+h.wonBB+"bb":"lost");
+  var aiR=aiHandResult(h); if(aiR) html+=pill("p-amber","All-in equity "+Math.round(aiR.eq*100)+"% &middot; "+(aiR.luckBB>=0?"+":"")+aiR.luckBB.toFixed(1)+"bb vs EV");
   html+="</div><pre style=\"background:#f8f8f8;padding:.875rem;border-radius:8px;border:0.5px solid #e0e0e0;max-height:180px;overflow-y:auto;color:#666\">"+escH(h.raw.trim())+"</pre>";
   html+="<div id=\"oai-"+sid+"\" style=\"margin-top:.75rem\"></div>";
   $e("hh-hdi").innerHTML=html;
@@ -1713,7 +1925,7 @@ function renderRL() {
         ?"<span style=\"font-size:11px;color:#0F6E56;font-family:monospace;margin-left:6px\">&#128176;"+ko+"KO</span>"
         :"<span style=\"font-size:11px;color:#ccc;font-family:monospace;margin-left:6px\">0KO</span>";
     }
-    html+="<div class=\""+rowCls+"\">";
+    html+="<div class=\""+rowCls+"\" style=\"cursor:pointer\" onclick=\"openTournament('"+t.id+"')\">";
     html+="<div>";
     html+="<div style=\"font-size:12px;font-weight:500\">#"+t.id+" "+pill(placeCls,placeLabel)+koHtml+"</div>";
     html+="<div style=\"font-size:11px;color:#666;font-family:monospace;margin-top:1px\">"+dateStr+" &middot; $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div>";
@@ -1758,7 +1970,7 @@ function resAskCustom() { var q=$e("res-q").value.trim(); if(q){resAsk(q); $e("r
 // ============================================================
 function hhTab(n,b) {
   document.querySelectorAll("#hh-stabs .st").forEach(function(t){t.classList.remove("on");});
-  ["ov","rush","final","pos","hands","cards","weak","ranges","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
+  ["ov","rush","final","pos","hands","cards","weak","ranges","allin","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
   if(b) b.classList.add("on");
   var el=$e("hhT-"+n); if(el) el.style.display="block";
   if(n==="ranges") renderRangeChart();
