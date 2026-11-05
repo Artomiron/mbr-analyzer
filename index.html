@@ -202,7 +202,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
             </select>
           </div>
           <div id="rc-stack-wrap" style="display:none"><label style="font-size:11px;color:#666;display:block;margin-bottom:2px">Стек (bb)</label>
-            <input type="number" id="rc-stack" value="10" min="1" max="15" step="1" style="width:70px" oninput="renderRangeChart()">
+            <select id="rc-stack" onchange="renderRangeChart()"><option value="6">до 6bb</option><option value="10" selected>6–10bb</option><option value="15">10–15bb</option></select>
           </div>
           <div id="rc-legend" style="font-size:12px;color:#666"></div>
         </div>
@@ -1143,13 +1143,15 @@ function setRangeSrc(s,b) {
 }
 // Реальний результат з власних роздач: n разів у цьому контексті (позиція+режим, для пуш/фолду ще й стек ±3bb),
 // % виграних і чистий bb (та сама оцінка, що й у Top hands: h.wonBB коли виграно, інакше -potBB*0.12 або -2bb).
+// push/fold stack buckets match the thresholds in drPushThresh: (0,6], (6,10], (10,15]
+function rcStackRange(hi){ return hi<=6?[0,6]:hi<=10?[6,10]:[10,15]; }
 function rcMyStats(mode,pos,stackBB) {
-  var hands=filteredHH(), stats={};
+  var hands=filteredHH(), stats={}, sr=rcStackRange(stackBB);
   for(var i=0;i<hands.length;i++) {
     var h=hands[i], v=judgeHandDecision(h);
     if(!v||v.cat!==mode) continue;
     if(mode!=="vs_3bet"&&h.pos!==pos) continue;
-    if(mode==="pushfold"&&Math.abs(h.stackBB-stackBB)>3) continue;
+    if(mode==="pushfold"&&!(h.stackBB>sr[0]&&h.stackBB<=sr[1])) continue;
     if(!h.normCards||h.normCards==="?") continue;
     var s=stats[h.normCards]||(stats[h.normCards]={n:0,wins:0,netBB:0});
     s.n++;
@@ -1185,7 +1187,7 @@ function renderRangeChart() {
   }
   grid.innerHTML=html;
   if(mine) {
-    $e("rc-legend").textContent=(totalN?"Разом "+totalN+" роздач у цьому контексті. ":"Даних немає для цього контексту. ")+"🟩 Прибутково · 🟥 Збитково · 🟨 <3 разів (ненадійно) · ⬜ 0 разів";
+    $e("rc-legend").textContent=(rcMode==="pushfold"?"Стек "+$e("rc-stack").options[$e("rc-stack").selectedIndex].text+". ":"")+(totalN?"Разом "+totalN+" роздач у цьому контексті. ":"Даних немає для цього контексту. ")+"🟩 Прибутково · 🟥 Збитково · 🟨 <3 разів (ненадійно) · ⬜ 0 разів";
   } else {
     $e("rc-legend").textContent=RC_LEGEND[rcMode];
   }
