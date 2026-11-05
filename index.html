@@ -157,7 +157,7 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
       <button class="st" onclick="hhTab(&#39;weak&#39;,this)">Leaks</button>
       <button class="st" onclick="hhTab(&#39;ranges&#39;,this)">📊 Ranges</button>
       <button class="st" onclick="hhTab(&#39;allin&#39;,this)">🎲 All-in EV</button>
-      <button class="st" onclick="hhTab(&#39;ai&#39;,this)">🧮 Рішення</button>
+      <button class="st" onclick="hhTab(&#39;ai&#39;,this)">🧮 Аудит</button>
     </div>
     <div id="hhT-ov"><div class="card"><div class="card-hdr">Overall stats</div><div id="hh-ov-c"></div></div></div>
     <div id="hhT-rush" style="display:none"><div class="card"><div class="card-hdr">⚡ Rush Stage</div><div id="hh-rush-c"></div></div></div>
@@ -182,31 +182,8 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
     <div id="hhT-weak" style="display:none"><div class="card"><div class="card-hdr">⚠️ Leaks</div><div id="hh-weak-c"></div></div></div>
     <div id="hhT-ranges" style="display:none">
       <div class="card">
-        <div class="card-hdr">📊 Рейндж-чарти (формула Чена — ті самі пороги, що в «Аналізі рішень»)</div>
-        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Скрізь, крім режиму «Пуш/фолд», мається на увазі глибокий стек (&gt;15bb).</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem" id="rc-modes">
-          <button class="btn btn-primary" onclick="setRangeMode('open',this)">Відкриття</button>
-          <button class="btn" onclick="setRangeMode('vs_open',this)">Проти опену</button>
-          <button class="btn" onclick="setRangeMode('vs_3bet',this)">Проти 3-бету</button>
-          <button class="btn" onclick="setRangeMode('pushfold',this)">Пуш/фолд</button>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem" id="rc-src">
-          <button class="btn btn-primary" onclick="setRangeSrc('theory',this)">📚 Теорія</button>
-          <button class="btn" onclick="setRangeSrc('mine',this)">📊 Мої дані</button>
-        </div>
-        <div class="alert a-info" style="font-size:11px;margin-bottom:.75rem">«Мої дані» — не справжня еквіті (для неї потрібен окремий солвер/симуляція проти діапазону), а реальний результат ваших роздач у цьому контексті: скільки разів грали, % виграних, чистий bb.</div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
-          <div id="rc-pos-wrap"><label style="font-size:11px;color:#666;display:block;margin-bottom:2px">Позиція</label>
-            <select id="rc-pos" onchange="renderRangeChart()">
-              <option value="UTG">UTG</option><option value="MP">MP</option><option value="HJ">HJ</option><option value="CO">CO</option><option value="BTN" selected>BTN</option><option value="SB">SB</option><option value="BB">BB</option>
-            </select>
-          </div>
-          <div id="rc-stack-wrap" style="display:none"><label style="font-size:11px;color:#666;display:block;margin-bottom:2px">Стек (bb)</label>
-            <select id="rc-stack" onchange="renderRangeChart()"><option value="6">до 6bb</option><option value="10" selected>6–10bb</option><option value="15">10–15bb</option></select>
-          </div>
-          <div id="rc-legend" style="font-size:12px;color:#666"></div>
-        </div>
-        <div id="rc-grid" style="display:grid;grid-template-columns:repeat(13,1fr);gap:2px;max-width:640px;font-family:monospace"></div>
+        <div class="card-hdr">📊 Префлоп-діапазони</div>
+        <div id="rg-body"></div>
       </div>
     </div>
     <div id="hhT-allin" style="display:none">
@@ -219,10 +196,8 @@ pre{font-family:monospace!important;font-size:12px;line-height:1.55}
     </div>
     <div id="hhT-ai" style="display:none">
       <div class="card">
-        <div class="card-hdr">🧮 Аналіз рішень (за правилами, миттєво, без AI)</div>
-        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Оцінює кожну роздачу, де відомі карти Hero: відкриття, захист проти опену/3-бету, пуш/фолд на короткому стеку. Формула Чена + рейнджі по позиції/глибині стека. Постфлоп — окремо у вкладці «Leaks».</div>
-        <button class="btn btn-primary" onclick="runDecisionReview()">▶ Аналізувати вибрані місяці (<span id="hh-dec-cnt">0</span> роздач)</button>
-        <div id="hh-dec-r" style="margin-top:.875rem"></div>
+        <div class="card-hdr">🧮 Аудит префлопа</div>
+        <div id="af-body"></div>
       </div>
     </div>
   </div>
@@ -563,7 +538,7 @@ function updateStoredNotice() {
 // SECTION: FILE LOADING
 // ============================================================
 window.addEventListener("DOMContentLoaded", function(){
-  applyConfig(ACTIVE_CONFIG); restoreState();
+  applyConfig(ACTIVE_CONFIG); restoreState(); rgInit();
   $e("hh-inp").addEventListener("change", function(e){if(e.target.files.length) loadFiles("hh",Array.from(e.target.files));});
   $e("res-inp").addEventListener("change", function(e){if(e.target.files.length) loadFiles("res",Array.from(e.target.files));});
   ["hh","res"].forEach(function(pre){
@@ -973,224 +948,248 @@ function calcWeaknesses(all,rushS,st,n) {
 }
 
 // ============================================================
-// SECTION: DECISION REVIEW (rule-based, no AI/network — Chen score + range charts)
+// SECTION: PREFLOP RANGES (imported JSON) + AUDIT
 // ============================================================
-function chenScore(nc) {
-  if(!nc||nc==="?"||nc.length<2) return 0;
-  var order="AKQJT98765432";
-  var r1=nc[0], r2=nc[1], suited=nc.length===3&&nc[2]==="s";
-  var pts={A:10,K:8,Q:7,J:6,T:5};
-  function base(r){ return pts[r]!==undefined?pts[r]:parseInt(r,10)/2; }
-  var score;
-  if(r1===r2){ score=Math.max(base(r1)*2,5); }
-  else{
-    score=Math.max(base(r1),base(r2));
-    if(suited) score+=2;
-    var i1=order.indexOf(r1), i2=order.indexOf(r2), gap=Math.abs(i1-i2)-1;
-    if(gap<=0) score+=1; else if(gap===1) score-=1; else if(gap===2) score-=2; else if(gap===3) score-=4; else score-=5;
+var RG=null, afRes=[], afSkip=[], rgSpot=null, rgChart=null, rgMine=false;
+var RG_RANKS="AKQJT98765432", AF_POS=["EP","EP+1","EP+2","MP","HJ","CO","BU"];
+var RG_COL={R:"#6D4BD8",A:"#C2185B",T:"#C0392B",C:"#0F6E56"};
+function rgIdb(){ return new Promise(function(res,rej){ var r=indexedDB.open("mbr-ranges",1); r.onupgradeneeded=function(){r.result.createObjectStore("kv");}; r.onsuccess=function(){res(r.result);}; r.onerror=function(){rej(r.error);}; }); }
+async function rgPut(doc){
+  try{ var db=await rgIdb(); await new Promise(function(res,rej){ var tx=db.transaction("kv","readwrite"); if(doc) tx.objectStore("kv").put(doc,"doc"); else tx.objectStore("kv").delete("doc"); tx.oncomplete=function(){res();}; tx.onerror=tx.onabort=function(){rej(tx.error);}; }); db.close(); }catch(e){}
+}
+async function rgGet(){
+  try{ var db=await rgIdb(); var v=await new Promise(function(res,rej){ var q=db.transaction("kv").objectStore("kv").get("doc"); q.onsuccess=function(){res(q.result);}; q.onerror=function(){rej(q.error);}; }); db.close(); return v||null; }catch(e){ return null; }
+}
+function rgValid(d){ return !!(d&&d.format==="preflop-ranges/1"&&Array.isArray(d.charts)&&d.charts.length&&d.charts.every(function(c){return c.id&&typeof c.grid==="string"&&c.grid.length===169;})); }
+function rgSet(d){ RG={doc:d,by:{}}; d.charts.forEach(function(c){RG.by[c.id]=c;}); }
+async function rgInit(){ var d=await rgGet(); if(rgValid(d)) rgSet(d); renderRangesTab(); renderAuditTab(); }
+async function rgImport(file){
+  if(!file) return;
+  try{
+    var d=JSON.parse(await file.text());
+    if(!rgValid(d)) throw new Error("Невірний формат файлу діапазонів");
+    rgSet(d); await rgPut(d); afRes=[]; afSkip=[]; rgSpot=null; rgChart=null;
+    renderRangesTab(); renderAuditTab();
+  }catch(e){ var m=$e("rg-msg"); if(m) m.innerHTML="<span class=\"c-red\">"+escH(e.message)+"</span>"; }
+}
+async function rgRemove(){
+  if(!confirm("Видалити завантажені діапазони з цього браузера?")) return;
+  RG=null; afRes=[]; afSkip=[]; await rgPut(null); renderRangesTab(); renderAuditTab();
+}
+function rgChartLabel(c){
+  if(c.spot==="rfi") return c.pos+" · "+c.pct+"%";
+  if(c.spot==="pushfold") return c.band.replace("-","–")+"bb · "+c.pos+" · "+c.pct+"%";
+  if(c.spot==="bbdef") return {early:"проти ранніх",mid:"проти середніх",late:"проти пізніх"}[c.raiser]||c.raiser;
+  return c.id;
+}
+function rgPickSpot(s){ rgSpot=s; rgChart=null; renderRangesTab(); }
+function rgPickChart(id){ rgChart=id; renderRangesTab(); }
+function renderRangesTab(){
+  var el=$e("rg-body"); if(!el) return;
+  if(!RG){
+    el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:.75rem\">Діапазони не завантажено. Оберіть файл <strong>preflop-ranges.json</strong> (лежить у папці Poker). Він зберігається лише в цьому браузері й нікуди не відправляється.</div>"+
+      "<input type=\"file\" accept=\".json,application/json\" onchange=\"rgImport(this.files[0]);this.value=''\"><div id=\"rg-msg\" style=\"margin-top:.5rem;font-size:12px\"></div>";
+    return;
   }
-  return Math.round(score*2)/2;
+  var spots=Object.keys(RG.doc.spots).filter(function(s){return RG.doc.charts.some(function(c){return c.spot===s;});});
+  if(!rgSpot||spots.indexOf(rgSpot)<0) rgSpot=spots[0];
+  var charts=RG.doc.charts.filter(function(c){return c.spot===rgSpot;});
+  if(!rgChart||!RG.by[rgChart]||RG.by[rgChart].spot!==rgSpot) rgChart=charts[0].id;
+  var html="<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.6rem\">"+spots.map(function(s){return "<button class=\"btn"+(s===rgSpot?" btn-primary":"")+"\" onclick=\"rgPickSpot('"+s+"')\">"+RG.doc.spots[s].title+"</button>";}).join("")+"</div>"+
+    "<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem\">"+charts.map(function(c){return "<button class=\"btn"+(c.id===rgChart?" btn-primary":"")+"\" onclick=\"rgPickChart('"+c.id+"')\">"+rgChartLabel(c)+"</button>";}).join("")+"</div>"+
+    "<div id=\"rg-info\" style=\"font-size:12px;color:#666;margin-bottom:.6rem\"></div>"+
+    "<label style=\"font-size:12px;display:flex;gap:6px;align-items:center;margin-bottom:.75rem\"><input type=\"checkbox\" id=\"rg-mine\" onchange=\"rgDraw()\""+(rgMine?" checked":"")+"> Показати мою гру (спершу запустіть аудит у вкладці «Аудит»)</label>"+
+    "<div id=\"rg-grid\" style=\"display:grid;grid-template-columns:repeat(13,1fr);gap:2px;max-width:640px;font-family:monospace\"></div>"+
+    "<div style=\"margin-top:.9rem\"><button class=\"btn btn-danger\" style=\"font-size:11px\" onclick=\"rgRemove()\">Видалити діапазони з браузера</button></div>";
+  el.innerHTML=html; rgDraw();
+}
+function rgDraw(){
+  var c=RG&&RG.by[rgChart], g=$e("rg-grid"); if(!c||!g) return;
+  var me=$e("rg-mine"); rgMine=!!(me&&me.checked);
+  var sp=RG.doc.spots[c.spot], codes=sp.codes, per={};
+  if(rgMine) afRes.forEach(function(r){ if(r.chart===c.id){ var p=per[r.hand]||(per[r.hand]={n:0,bad:0}); p.n++; if(!r.ok) p.bad++; } });
+  var html="", r, k;
+  for(r=0;r<13;r++) for(k=0;k<13;k++){
+    var nc=r===k?RG_RANKS[r]+RG_RANKS[r]:(r<k?RG_RANKS[r]+RG_RANKS[k]+"s":RG_RANKS[k]+RG_RANKS[r]+"o");
+    var code=c.grid.charAt(r*13+k), bg=RG_COL[code]||"#eee", fg=RG_COL[code]?"#fff":"#aaa", p=per[nc], sub="", bd="";
+    if(p){ sub="<div style=\"font-size:8px;opacity:.9\">"+(p.n-p.bad)+"/"+p.n+"</div>"; if(p.bad) bd="box-shadow:inset 0 0 0 3px #FFD400;"; }
+    html+="<div style=\"background:"+bg+";color:"+fg+";"+bd+"display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;border-radius:3px;font-size:10px;line-height:1.1\" title=\""+nc+" — "+(codes[code]||code)+(p?" · за еталоном "+(p.n-p.bad)+" з "+p.n:"")+"\">"+nc+sub+"</div>";
+  }
+  g.innerHTML=html;
+  var legend=Object.keys(codes).map(function(kk){return "<span style=\"display:inline-flex;align-items:center;gap:4px;margin-right:12px\"><span style=\"width:11px;height:11px;border-radius:2px;background:"+(RG_COL[kk]||"#eee")+";border:1px solid #ccc\"></span>"+codes[kk]+"</span>";}).join("");
+  var info=$e("rg-info");
+  if(info) info.innerHTML=legend+"<div style=\"margin-top:4px\">"+(sp.note||"")+(c.stackAssumed?" Межі стека — припущення.":"")+
+    (rgMine?(afRes.length?" Жовта рамка: у цій руці були відхилення від еталона; «k/n» — скільки разів ви зіграли за еталоном.":" <strong>Аудит ще не запущено.</strong>"):"")+"</div>";
 }
 
-var DR_POS_GROUP={UTG:"early","UTG+1":"early",MP:"early",HJ:"late",CO:"late",BTN:"late",SB:"blind",BB:"blind","?":"early"};
-var DR_OPEN_THRESH={early:9,late:6,blind:8};
-var DR_FACE_OPEN_THRESH={early:9,late:7,blind:9};
-var DR_FACE_3BET_THRESH=10;
-function drPushThresh(stackBB,group) {
-  if(stackBB<=6) return group==="early"?6:(group==="late"?4:5);
-  if(stackBB<=10) return group==="early"?8:(group==="late"?6:6);
-  return group==="early"?10:(group==="late"?7:8);
-}
-function drPreLines(raw) {
-  var flopIdx=raw.indexOf("*** FLOP ***"), hcIdx=raw.indexOf("*** HOLE CARDS ***");
-  var prePart=flopIdx>-1?raw.substring(hcIdx>-1?hcIdx:0,flopIdx):raw.substring(hcIdx>-1?hcIdx:0);
-  return prePart.split("\n");
-}
-function drFacingOpen(preLines) {
-  var heroIdx=-1;
-  for(var i=0;i<preLines.length;i++){ if(preLines[i].indexOf("Hero:")===0){heroIdx=i;break;} }
-  if(heroIdx===-1) return {faced:false};
-  var raisesBefore=0;
-  for(var i=0;i<heroIdx;i++){ if(/^\w[\w\d]+: raises/.test(preLines[i])&&preLines[i].indexOf("Hero:")!==0) raisesBefore++; }
-  if(raisesBefore===0) return {faced:false};
-  var hl=preLines[heroIdx];
-  var action=hl.indexOf(": folds")>-1?"fold":hl.indexOf(": raises")>-1?"raise":hl.indexOf(": calls")>-1?"call":hl.indexOf(": checks")>-1?"check":"other";
-  return {faced:true,raisesBefore:raisesBefore,action:action};
-}
-function drMk(cat,verdict,reason) { return {cat:cat,verdict:verdict,reason:reason}; }
-
-function judgeHandDecision(h) {
-  if(!h.normCards||h.normCards==="?") return null;
-  var chen=chenScore(h.normCards), group=DR_POS_GROUP[h.pos]||"early", pl=drPreLines(h.raw);
-
-  if(h.stackBB>0&&h.stackBB<=15) {
-    var thr=drPushThresh(h.stackBB,group);
-    if(h.allin) {
-      if(chen<thr-2) return drMk("pushfold","mistake","Пуш "+h.normCards+" ("+h.stackBB+"bb, "+h.pos+") — занадто широко для цієї глибини/позиції.");
-      if(chen<thr) return drMk("pushfold","marginal","Пуш "+h.normCards+" ("+h.stackBB+"bb) — межова рука, спірне рішення.");
-      return drMk("pushfold","correct","Пуш "+h.normCards+" ("+h.stackBB+"bb) — в межах пуш-діапазону.");
-    }
-    if(!h.vpip) {
-      if(chen>=thr+2) return drMk("pushfold","mistake","Фолд "+h.normCards+" ("+h.stackBB+"bb, "+h.pos+") — рука сильніша за поріг пушу, варто було йти в пуш.");
-      return drMk("pushfold","correct","Фолд "+h.normCards+" ("+h.stackBB+"bb) — обґрунтовано на такій глибині.");
-    }
-    return drMk("pushfold","mistake","Розіграш "+h.normCards+" колом/коллом на "+h.stackBB+"bb — на такій глибині потрібен чіткий пуш/фолд, не флет.");
-  }
-
-  var fo=drFacingOpen(pl);
-  if(fo.faced&&fo.raisesBefore===1) {
-    var thr2=DR_FACE_OPEN_THRESH[group];
-    if(fo.action==="fold") {
-      if(chen>=thr2+2) return drMk("facing_open","mistake","Фолд "+h.normCards+" проти опену — рука сильна для продовження ("+h.pos+").");
-      return drMk("facing_open","correct","Фолд "+h.normCards+" проти опену — обґрунтовано.");
-    }
-    if(fo.action==="call"||fo.action==="raise") {
-      if(chen<thr2-3) return drMk("facing_open","mistake",(fo.action==="call"?"Колл":"3-бет")+" "+h.normCards+" проти опену — рука занадто слабка для продовження.");
-      return drMk("facing_open","correct",(fo.action==="call"?"Колл":"3-бет")+" "+h.normCards+" проти опену — в межах діапазону.");
-    }
-  }
-
-  if(h.hadF3bOpp) {
-    if(h.foldTo3bet) {
-      if(chen>=DR_FACE_3BET_THRESH+2) return drMk("facing_3bet","mistake","Фолд "+h.normCards+" на 3-бет — рука занадто сильна, щоб скидати.");
-      return drMk("facing_3bet","correct","Фолд "+h.normCards+" на 3-бет — норм.");
-    }
-    if(chen<DR_FACE_3BET_THRESH-3) return drMk("facing_3bet","mistake","Продовження з "+h.normCards+" проти 3-бету — рука занадто слабка.");
-    return drMk("facing_3bet","correct","Продовження з "+h.normCards+" проти 3-бету — обґрунтовано.");
-  }
-
-  if(!fo.faced) {
-    var thr3=DR_OPEN_THRESH[group];
-    if(h.pfr) {
-      if(chen<thr3-3) return drMk("open","mistake","Опен-рейз "+h.normCards+" з "+h.pos+" — занадто широко для цієї позиції.");
-      return drMk("open","correct","Опен-рейз "+h.normCards+" з "+h.pos+" — в межах діапазону.");
-    }
-    if(!h.vpip) {
-      if(chen>=thr3+3) return drMk("open","mistake","Фолд "+h.normCards+" з "+h.pos+" — сильна рука, варто було відкривати.");
-      return drMk("open","correct","Фолд "+h.normCards+" з "+h.pos+" — обґрунтовано.");
-    }
-  }
-  return null;
-}
-
-function analyzeDecisions(hands) {
-  var cats={open:{c:0,m:0,g:0},facing_open:{c:0,m:0,g:0},facing_3bet:{c:0,m:0,g:0},pushfold:{c:0,m:0,g:0}};
-  var mistakes=[], total=0, correct=0, mistake=0, marginal=0, byMonth={};
-  for(var i=0;i<hands.length;i++) {
-    var h=hands[i], v=judgeHandDecision(h);
-    if(!v) continue;
-    total++;
-    var mk3=getMonthKey(h.date);
-    if(!byMonth[mk3]) byMonth[mk3]={n:0,c:0};
-    byMonth[mk3].n++;
-    if(v.verdict==="correct"){ correct++; cats[v.cat].c++; byMonth[mk3].c++; }
-    else if(v.verdict==="mistake"){ mistake++; cats[v.cat].m++; mistakes.push({h:h,reason:v.reason,cat:v.cat}); }
-    else { marginal++; cats[v.cat].g++; }
-  }
-  return {total:total,correct:correct,mistake:mistake,marginal:marginal,cats:cats,mistakes:mistakes,byMonth:byMonth};
-}
-
-// ============================================================
-// SECTION: RANGE CHARTS (open / vs open / vs 3bet / push-fold)
-// ============================================================
-var RC_RANKS="AKQJT98765432", rcMode="open";
-function setRangeMode(m,b) {
-  rcMode=m;
-  document.querySelectorAll("#rc-modes .btn").forEach(function(x){x.classList.remove("btn-primary");});
-  if(b) b.classList.add("btn-primary");
-  $e("rc-stack-wrap").style.display=m==="pushfold"?"block":"none";
-  $e("rc-pos-wrap").style.display=m==="vs_3bet"?"none":"block";
-  renderRangeChart();
-}
-function rcCellInfo(nc,mode,group,stackBB) {
-  var chen=chenScore(nc);
-  if(mode==="open") {
-    var thr=DR_OPEN_THRESH[group];
-    if(chen>=thr) return {bg:"#0F6E56",fg:"#fff",lbl:"open"};
-    if(chen>=thr-3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
-    return {bg:"#eee",fg:"#999",lbl:"fold"};
-  }
-  if(mode==="vs_open") {
-    var thr2=DR_FACE_OPEN_THRESH[group];
-    if(chen>=thr2+6) return {bg:"#122033",fg:"#fff",lbl:"3-bet"};
-    if(chen>=thr2+2) return {bg:"#185FA5",fg:"#fff",lbl:"call"};
-    if(chen>=thr2-3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
-    return {bg:"#eee",fg:"#999",lbl:"fold"};
-  }
-  if(mode==="vs_3bet") {
-    var thr3=DR_FACE_3BET_THRESH;
-    if(chen>=thr3+2) return {bg:"#185FA5",fg:"#fff",lbl:"call"};
-    if(chen>=thr3-3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
-    return {bg:"#eee",fg:"#999",lbl:"fold"};
-  }
-  var thr4=drPushThresh(stackBB,group);
-  if(chen>=thr4) return {bg:"#0F6E56",fg:"#fff",lbl:"push"};
-  if(chen>=thr4-2) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:"?"};
-  return {bg:"#eee",fg:"#999",lbl:"fold"};
-}
-var RC_LEGEND={
-  open:"🟩 Відкривати · 🟨 Спірно (близько до межі) · ⬜ Фолд",
-  vs_open:"⬛ 3-бет · 🟦 Колл · 🟨 Спірно · ⬜ Фолд",
-  vs_3bet:"🟦 Колл/4-бет · 🟨 Спірно (поріг у моделі не залежить від позиції) · ⬜ Фолд",
-  pushfold:"🟩 Пуш · 🟨 Спірно · ⬜ Фолд"
+// ---------------- audit: compare your preflop play with the loaded charts ----------------
+var AF_SPOT={rfi:"Опен (RFI)",pushfold:"Пуш/фолд",bbdef:"Захист BB"};
+var AF_KIND={
+  rfi:{missed:"Пропущено опен (рука в діапазоні)",outside:"Опен поза діапазоном",limp:"Лімп замість опену/фолду"},
+  pushfold:{missed:"Фолд руки з пуш-діапазону",outside:"Пуш або рейз поза діапазоном",wrongsize:"Рейз замість олл-іну",limp:"Лімп замість пуш/фолду"},
+  bbdef:{missed:"Фолд руки з діапазону захисту",outside:"Захист поза діапазоном",passive:"Колл замість 3-бета",aggro:"3-бет замість кола"}
 };
-var rcSrc="theory";
-function setRangeSrc(s,b) {
-  rcSrc=s;
-  document.querySelectorAll("#rc-src .btn").forEach(function(x){x.classList.remove("btn-primary");});
-  if(b) b.classList.add("btn-primary");
-  renderRangeChart();
-}
-// Реальний результат з власних роздач: n разів у цьому контексті (позиція+режим, для пуш/фолду ще й стек ±3bb),
-// % виграних і чистий bb (та сама оцінка, що й у Top hands: h.wonBB коли виграно, інакше -potBB*0.12 або -2bb).
-// push/fold stack buckets match the thresholds in drPushThresh: (0,6], (6,10], (10,15]
-function rcStackRange(hi){ return hi<=6?[0,6]:hi<=10?[6,10]:[10,15]; }
-function rcMyStats(mode,pos,stackBB) {
-  var hands=filteredHH(), stats={}, sr=rcStackRange(stackBB);
-  for(var i=0;i<hands.length;i++) {
-    var h=hands[i], v=judgeHandDecision(h);
-    if(!v||v.cat!==mode) continue;
-    if(mode!=="vs_3bet"&&h.pos!==pos) continue;
-    if(mode==="pushfold"&&!(h.stackBB>sr[0]&&h.stackBB<=sr[1])) continue;
-    if(!h.normCards||h.normCards==="?") continue;
-    var s=stats[h.normCards]||(stats[h.normCards]={n:0,wins:0,netBB:0});
-    s.n++;
-    if(h.won){ s.wins++; s.netBB+=h.wonBB; } else { s.netBB-=(h.potBB>0?h.potBB*0.12:2); }
+var AF_REASON={stack_15_25:"Стек 15–25bb (немає еталона)",sb_open:"SB першим у банк (немає еталона)",limped:"Після лімперів (немає еталона)",vs_raise:"Проти рейза не з BB (немає еталона)",
+  bb_short:"BB проти рейза, стек <25bb",bb_vs_sb:"BB проти рейза з SB (немає еталона)",big_raise:"BB проти рейза понад 2.5bb або олл-іну",multiway:"Проти рейза з колерами/лімперами",vs_3bet_cold:"Проти 3-бета й вище",heads_up:"Менше 3 гравців",parse:"Не вдалося розібрати",no_chart:"Немає діаграми у файлі"};
+var AF_ACT={F:"фолд",C:"колл",X:"чек",R:"рейз",RA:"олл-ін"};
+function afParse(h){
+  var lines=h.raw.split("\n"), seats=[], bb=null, sb=null, st=-1, i, ln, m;
+  for(i=0;i<lines.length;i++){
+    ln=lines[i];
+    if(ln.indexOf("*** HOLE CARDS ***")===0){ st=i+1; break; }
+    m=ln.match(/^Seat (\d+): (\S+) \(([\d,]+) in chips\)/); if(m){ seats.push({s:+m[1],n:m[2]}); continue; }
+    m=ln.match(/^(\S+): posts small blind/); if(m){ sb=m[1]; continue; }
+    m=ln.match(/^(\S+): posts big blind/); if(m) bb=m[1];
   }
-  return stats;
-}
-function rcCellInfoMine(nc,stats) {
-  var s=stats[nc];
-  if(!s||!s.n) return {bg:"#f5f5f5",fg:"#ccc",lbl:"немає даних",sub:""};
-  var wr=Math.round(s.wins/s.n*100);
-  if(s.n<3) return {bg:"#F5D8A8",fg:"#6b4a12",lbl:s.n+"x, WR"+wr+"%, "+(s.netBB>=0?"+":"")+s.netBB.toFixed(1)+"bb (мало даних)",sub:s.n+"x"};
-  if(s.netBB>0) return {bg:"#0F6E56",fg:"#fff",lbl:s.n+"x, WR"+wr+"%, +"+s.netBB.toFixed(1)+"bb",sub:s.n+"x ·+"+s.netBB.toFixed(0)};
-  return {bg:"#A32D2D",fg:"#fff",lbl:s.n+"x, WR"+wr+"%, "+s.netBB.toFixed(1)+"bb",sub:s.n+"x ·"+s.netBB.toFixed(0)};
-}
-function renderRangeChart() {
-  var grid=$e("rc-grid"); if(!grid) return;
-  var pos=$e("rc-pos").value, group=DR_POS_GROUP[pos]||"early";
-  var stackBB=parseFloat($e("rc-stack").value)||10;
-  var mine=rcSrc==="mine", stats=mine?rcMyStats(rcMode,pos,stackBB):null;
-  var totalN=0; if(mine) for(var k in stats) totalN+=stats[k].n;
-  var html="";
-  for(var i=0;i<13;i++) {
-    for(var j=0;j<13;j++) {
-      var nc;
-      if(i===j) nc=RC_RANKS[i]+RC_RANKS[j];
-      else if(i<j) nc=RC_RANKS[i]+RC_RANKS[j]+"s";
-      else nc=RC_RANKS[j]+RC_RANKS[i]+"o";
-      var info=mine?rcCellInfoMine(nc,stats):rcCellInfo(nc,rcMode,group,stackBB);
-      var sub=mine&&info.sub?"<div style=\"font-size:7px;opacity:.85\">"+info.sub+"</div>":"";
-      html+="<div style=\"background:"+info.bg+";color:"+info.fg+";display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;border-radius:3px;font-size:10px;line-height:1.1\" title=\""+nc+" — "+info.lbl+"\">"+nc+sub+"</div>";
-    }
+  if(st<0||!bb||!sb) return null;
+  if(seats.length<3) return {n:seats.length,pos:{},acts:[]};
+  seats.sort(function(a,b){return a.s-b.s;});
+  var bi=-1; seats.forEach(function(s,k){ if(s.n===bb) bi=k; }); if(bi<0) return null;
+  var order=[]; for(i=1;i<seats.length;i++) order.push(seats[(bi+i)%seats.length].n);
+  order=order.filter(function(n){return n!==sb;});
+  if(order.length<1||order.length>AF_POS.length) return null;
+  var labels=AF_POS.slice(AF_POS.length-order.length), pos={};
+  order.forEach(function(n,k){ pos[n]=labels[k]; }); pos[sb]="SB"; pos[bb]="BB";
+  var acts=[];
+  for(i=st;i<lines.length;i++){
+    ln=lines[i]; if(ln.indexOf("***")===0) break;
+    m=ln.match(/^(\S+): (folds|checks|calls [\d,]+|raises [\d,]+ to ([\d,]+)|bets [\d,]+)( and is all-in)?/);
+    if(!m) continue;
+    var w=m[2].charAt(0);
+    acts.push({p:m[1],a:w==="f"?"F":(w==="c"?(m[2].charAt(1)==="h"?"X":"C"):"R"),allin:!!m[4],to:m[3]?ch(m[3]):0});
   }
-  grid.innerHTML=html;
-  if(mine) {
-    $e("rc-legend").textContent=(rcMode==="pushfold"?"Стек "+$e("rc-stack").options[$e("rc-stack").selectedIndex].text+". ":"")+(totalN?"Разом "+totalN+" роздач у цьому контексті. ":"Даних немає для цього контексту. ")+"🟩 Прибутково · 🟥 Збитково · 🟨 <3 разів (ненадійно) · ⬜ 0 разів";
+  return {n:seats.length,pos:pos,acts:acts};
+}
+function afIdx(nc){
+  var a=RG_RANKS.indexOf(nc.charAt(0)), b=RG_RANKS.indexOf(nc.charAt(1));
+  if(a<0||b<0) return -1;
+  if(a===b) return a*13+a;
+  return nc.charAt(2)==="s"?a*13+b:b*13+a;
+}
+function afNearest(pos,list){
+  if(list.indexOf(pos)>-1) return {pos:pos,approx:false};
+  var pi=AF_POS.indexOf(pos), best=null;
+  list.forEach(function(p){ var q=AF_POS.indexOf(p); if(q<0) return; var d=Math.abs(q-pi);
+    if(!best||d<best.d||(d===best.d&&q<AF_POS.indexOf(best.pos))) best={pos:p,d:d}; });
+  return best?{pos:best.pos,approx:true}:null;
+}
+function afEvalHand(h){
+  var P=afParse(h); if(!P) return {skip:"parse"};
+  if(P.n<3) return {skip:"heads_up"};
+  var hp=P.pos.Hero; if(!hp) return {skip:"parse"};
+  var raises=0, limpers=0, callers=0, raiser=null, raiseAct=null, hi=-1, i, a;
+  for(i=0;i<P.acts.length;i++){
+    a=P.acts[i];
+    if(a.p==="Hero"){ hi=i; break; }
+    if(a.a==="R"){ raises++; raiser=a.p; raiseAct=a; } else if(a.a==="C"){ if(raises===0) limpers++; else callers++; }
+  }
+  if(hi<0) return {skip:"no_action"};
+  var ha=P.acts[hi], st=h.stackBB, nc=h.normCards;
+  if(!nc||nc==="?") return {skip:"parse"};
+  var idx=afIdx(nc); if(idx<0) return {skip:"parse"};
+  var act=ha.a==="R"?(ha.allin?"RA":"R"):ha.a, chart=null, spot=null, approx=false, m;
+  if(raises===0&&limpers===0){
+    if(hp==="BB") return {skip:"no_action"};
+    if(st<15){
+      var band=st<10?"0-9":"10-14", av=RG.doc.charts.filter(function(c){return c.spot==="pushfold"&&c.band===band;}).map(function(c){return c.pos;});
+      if(!av.length) return {skip:"no_chart"};
+      m=hp==="SB"?(av.indexOf("SB")>-1?{pos:"SB",approx:false}:null):afNearest(hp,av);
+      if(!m) return {skip:"no_chart"};
+      spot="pushfold"; chart=RG.by["pf:"+band+":"+m.pos]; approx=m.approx;
+    } else if(hp==="SB"){ return {skip:"sb_open"}; }
+    else if(st>=25){
+      var av2=RG.doc.charts.filter(function(c){return c.spot==="rfi";}).map(function(c){return c.pos;});
+      if(!av2.length) return {skip:"no_chart"};
+      m=afNearest(hp,av2); spot="rfi"; chart=RG.by["rfi:"+m.pos]; approx=m.approx;
+    } else return {skip:"stack_15_25"};
+  } else if(raises===0){ return {skip:"limped"}; }
+  else if(raises===1&&limpers===0&&callers===0){
+    if(hp!=="BB") return {skip:"vs_raise"};
+    if(st<25) return {skip:"bb_short"};
+    var rp=P.pos[raiser], grp=null, gk;
+    for(gk in RG.doc.raiserGroups){ if(RG.doc.raiserGroups[gk].indexOf(rp)>-1) grp=gk; }
+    if(!grp) return {skip:"bb_vs_sb"};
+    spot="bbdef"; chart=RG.by["bbdef:"+grp];
+    if(chart&&(raiseAct.allin||(h.bb>0&&raiseAct.to/h.bb>(chart.raiseMaxBB||2.5)))) return {skip:"big_raise"};
+  } else if(raises===1){ return {skip:"multiway"}; }
+  else return {skip:"vs_3bet_cold"};
+  if(!chart) return {skip:"no_chart"};
+  var rec=chart.grid.charAt(idx), ok=false, kind=null;
+  if(spot==="rfi"){
+    if(act==="R"||act==="RA"){ ok=rec==="R"; if(!ok) kind="outside"; }
+    else if(act==="F"){ ok=rec==="."; if(!ok) kind="missed"; }
+    else kind="limp";
+  } else if(spot==="pushfold"){
+    if(act==="RA"){ ok=rec==="A"; if(!ok) kind="outside"; }
+    else if(act==="F"){ ok=rec==="."; if(!ok) kind="missed"; }
+    else if(act==="R"){ kind=rec==="A"?"wrongsize":"outside"; }
+    else kind="limp";
   } else {
-    $e("rc-legend").textContent=RC_LEGEND[rcMode];
+    var got=(act==="R"||act==="RA")?"T":(act==="C"?"C":(act==="F"?".":"?"));
+    ok=rec===got;
+    if(!ok) kind=rec==="."?"outside":(got==="."?"missed":(rec==="T"?"passive":"aggro"));
   }
+  return {id:h.id,chart:chart.id,spot:spot,pos:hp,approx:approx,hand:nc,cards:h.cards,rec:rec,act:act,ok:ok,kind:kind,stack:st,stage:h.stage};
+}
+async function runAudit(){
+  if(!RG) return;
+  var hands=filteredHH(), prog=$e("af-prog"), i, r;
+  afRes=[]; afSkip=[];
+  for(i=0;i<hands.length;i++){
+    try{ r=afEvalHand(hands[i]); }catch(e){ r={skip:"parse"}; }
+    if(r.skip){ if(r.skip!=="no_action") afSkip.push({id:hands[i].id,reason:r.skip,stage:hands[i].stage}); }
+    else afRes.push(r);
+    if(i%400===399){ if(prog) prog.textContent="Аналізую "+(i+1)+" / "+hands.length+"..."; await new Promise(function(res){setTimeout(res,0);}); }
+  }
+  if(prog) prog.textContent="";
+  afRender();
+}
+function renderAuditTab(){
+  var el=$e("af-body"); if(!el) return;
+  if(!RG){ el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px\">Спершу завантажте діапазони у вкладці «Ranges».</div>"; return; }
+  el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:.875rem\">Для кожної роздачі програма визначає спот (опен, пуш/фолд при стеку до 15bb, захист BB проти одного рейза), дивиться на вашу руку в діаграмі й порівнює з тим, що ви зробили. «Відхилення» не завжди помилка: діаграми не враховують ICM і бавнті. Дії після 3-бета й споти без діаграми не оцінюються.</div>"+
+    "<div style=\"display:flex;gap:8px;align-items:center;flex-wrap:wrap\"><button class=\"btn btn-primary\" onclick=\"runAudit()\">▶ Запустити аудит (вибрані місяці)</button>"+
+    "<select id=\"af-stage\" onchange=\"afRender()\"><option value=\"all\">Rush + Фінал</option><option value=\"rush\">Тільки Rush</option><option value=\"final\">Тільки Фінал</option></select><span id=\"af-prog\" style=\"font-size:12px;color:#666\"></span></div>"+
+    "<div id=\"af-res\" style=\"margin-top:.875rem\"></div>";
+  if(afRes.length||afSkip.length) afRender();
+}
+function afRender(){
+  var el=$e("af-res"); if(!el) return;
+  var sel=$e("af-stage"), stage=sel?sel.value:"all";
+  var R=afRes.filter(function(r){return stage==="all"||r.stage===stage;}), S=afSkip.filter(function(r){return stage==="all"||r.stage===stage;});
+  var total=R.length+S.length;
+  if(!total){ el.innerHTML="<div class=\"alert a-info\" style=\"font-size:12px\">Немає роздач для аналізу у вибраних місяцях.</div>"; return; }
+  var ok=R.filter(function(r){return r.ok;}).length, appr=R.filter(function(r){return r.approx;}).length;
+  var html="<div class=\"sgrid\" style=\"margin-bottom:1rem\">"+
+    "<div class=\"sc\"><div class=\"sc-l\">Преф-рішень</div><div class=\"sc-v c-blue\">"+total+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">З еталоном</div><div class=\"sc-v\">"+Math.round(R.length/total*100)+"%</div><div class=\"sc-s\">"+R.length+" роздач</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">За еталоном</div><div class=\"sc-v "+(R.length&&ok/R.length>=0.8?"c-green":"c-amber")+"\">"+(R.length?Math.round(ok/R.length*100):0)+"%</div><div class=\"sc-s\">"+ok+" з "+R.length+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Відхилень</div><div class=\"sc-v c-red\">"+(R.length-ok)+"</div>"+(appr?"<div class=\"sc-s\">≈ "+appr+" за найближчою позицією</div>":"")+"</div></div>";
+  // by spot x position
+  var groups={}, order=[];
+  R.forEach(function(r){ var k=r.spot+"|"+r.pos; if(!groups[k]){ groups[k]={spot:r.spot,pos:r.pos,n:0,ok:0,approx:false,kinds:{}}; order.push(k);} var g=groups[k]; g.n++; if(r.ok) g.ok++; else g.kinds[r.kind]=(g.kinds[r.kind]||0)+1; if(r.approx) g.approx=true; });
+  var spotOrder=["rfi","pushfold","bbdef"], posOrder=AF_POS.concat(["SB","BB"]);
+  order.sort(function(a,b){ var x=groups[a],y=groups[b]; return (spotOrder.indexOf(x.spot)-spotOrder.indexOf(y.spot))||(posOrder.indexOf(x.pos)-posOrder.indexOf(y.pos)); });
+  html+="<div class=\"sec-l\">По спотах і позиціях</div><div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:520px;margin-bottom:1rem\"><thead><tr><th>Спот</th><th>Позиція</th><th>Рук</th><th>За еталоном</th><th>Відхилення</th></tr></thead><tbody>"+
+    order.map(function(k){ var g=groups[k], p=Math.round(g.ok/g.n*100);
+      return "<tr><td>"+AF_SPOT[g.spot]+"</td><td>"+g.pos+(g.approx?" ≈":"")+"</td><td>"+g.n+"</td><td><span class=\""+(p>=80?"c-green":p>=60?"c-amber":"c-red")+"\">"+p+"%</span></td><td style=\"font-size:11px;color:#666\">"+
+        Object.keys(g.kinds).sort(function(a,b){return g.kinds[b]-g.kinds[a];}).map(function(kd){return AF_KIND[g.spot][kd]+": "+g.kinds[kd];}).join("; ")+"</td></tr>"; }).join("")+"</tbody></table></div>";
+  // deviations ranking with hand lists
+  var dev={}, dk=[];
+  R.forEach(function(r){ if(r.ok) return; var k=r.spot+"|"+r.pos+"|"+r.kind; if(!dev[k]){dev[k]=[];dk.push(k);} dev[k].push(r); });
+  dk.sort(function(a,b){return dev[b].length-dev[a].length;});
+  html+="<div class=\"sec-l\">Найчастіші відхилення (клік по руці відкриє її)</div>";
+  if(!dk.length) html+="<p style=\"color:#666\">Відхилень не знайдено.</p>";
+  dk.slice(0,12).forEach(function(k){
+    var list=dev[k], f=list[0], sp=RG.doc.spots[f.spot].codes;
+    html+="<details style=\"margin-bottom:6px\"><summary style=\"cursor:pointer;font-size:13px\"><strong>"+list.length+"×</strong> "+AF_SPOT[f.spot]+" · "+f.pos+(f.approx?" ≈":"")+" — "+AF_KIND[f.spot][f.kind]+"</summary><div style=\"margin-top:6px\">"+
+      list.slice(0,25).map(function(r){ return "<div class=\"hi\" onclick=\"openHand('"+r.id+"')\"><div><div class=\"hi-name\">"+(r.cards?"["+r.cards+"] ":"")+"("+r.hand+") <span class=\""+r.stage+"\">"+r.stage.toUpperCase()+"</span></div>"+
+        "<div class=\"hi-meta\">стек "+r.stack+"bb · еталон: "+(sp[r.rec]||r.rec)+" · ви: "+AF_ACT[r.act]+"</div></div></div>"; }).join("")+(list.length>25?"<div style=\"font-size:11px;color:#999;margin-top:4px\">…і ще "+(list.length-25)+"</div>":"")+"</div></details>";
+  });
+  // coverage gaps
+  var rs={}; S.forEach(function(s){ rs[s.reason]=(rs[s.reason]||0)+1; });
+  html+="<div class=\"sec-l\" style=\"margin-top:1rem\">Де немає еталона</div>"+Object.keys(rs).sort(function(a,b){return rs[b]-rs[a];}).map(function(k){ return sr(AF_REASON[k]||k,rs[k]); }).join("");
+  el.innerHTML=html;
 }
 
 // ============================================================
@@ -1418,69 +1417,6 @@ function openTournament(id){
       scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},color:"#999"},grid:{display:false}},y:{beginAtZero:true,grace:"22%",ticks:{font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.06)"}}}}});
 }
 
-var drChart=null, drLastResult=null;
-function runDecisionReview() {
-  var hands=filteredHH();
-  $e("hh-dec-r").innerHTML="<span class=\"spinner\"></span>Обробка "+hands.length+" роздач...";
-  setTimeout(function(){
-    var res=analyzeDecisions(hands);
-    drLastResult=res;
-    renderDecisionResults(res);
-  },20);
-}
-
-function showHandFromDecisions(id) {
-  hhTab("hands",document.querySelectorAll("#hh-stabs .st")[4]);
-  showHand(id);
-}
-
-var DR_CAT_LABEL={open:"Відкриття",facing_open:"Захист проти опену",facing_3bet:"Проти 3-бету",pushfold:"Пуш/фолд"};
-function renderDecisionResults(res) {
-  if(!res.total){ $e("hh-dec-r").innerHTML="<div class=\"alert a-info\">Замало даних із чіткими преф-лоп рішеннями у вибраному періоді.</div>"; return; }
-  var accP=Math.round(res.correct/res.total*100);
-  var html="<div class=\"sgrid\" style=\"margin-bottom:1rem\">"+
-    "<div class=\"sc\"><div class=\"sc-l\">Проаналізовано</div><div class=\"sc-v c-blue\">"+res.total+"</div></div>"+
-    "<div class=\"sc\"><div class=\"sc-l\">Правильних</div><div class=\"sc-v "+(accP>=65?"c-green":"c-amber")+"\">"+accP+"%</div><div class=\"sc-s\">"+res.correct+"x</div></div>"+
-    "<div class=\"sc\"><div class=\"sc-l\">Помилок</div><div class=\"sc-v c-red\">"+res.mistake+"</div></div>"+
-    "<div class=\"sc\"><div class=\"sc-l\">Спірних</div><div class=\"sc-v c-amber\">"+res.marginal+"</div></div></div>";
-
-  html+="<div class=\"sec-l\">По категоріях</div>";
-  Object.keys(res.cats).forEach(function(k){
-    var d=res.cats[k], n=d.c+d.m+d.g; if(!n) return;
-    var p=Math.round(d.c/n*100);
-    html+="<div class=\"br\"><div class=\"bl\">"+DR_CAT_LABEL[k]+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+p+"%;background:"+(p>=65?"#0F6E56":"#854F0B")+"\"></div></div><div class=\"bv\">"+n+"x</div><div class=\"be\">"+p+"%</div></div>";
-  });
-
-  html+="<div style=\"margin-top:1rem\"><canvas id=\"hh-dec-chart\" height=\"180\"></canvas></div>";
-
-  var worst=res.mistakes.slice(0,40);
-  html+="<div class=\"sec-l\" style=\"margin-top:1rem\">Найгірші рішення (до 40)</div>";
-  if(!worst.length) html+="<p style=\"color:#666\">Помилок не знайдено 🎉</p>";
-  worst.forEach(function(m){
-    var h=m.h;
-    html+="<div class=\"hi\" onclick=\"showHandFromDecisions('"+h.id+"')\"><div><div class=\"hi-name\">"+(h.cards||h.normCards)+" <span class=\""+h.stage+"\">"+h.stage.toUpperCase()+"</span></div><div class=\"hi-meta\">"+m.reason+"</div></div></div>";
-  });
-  $e("hh-dec-r").innerHTML=html;
-  renderDecisionChart(res.byMonth);
-}
-
-function renderDecisionChart(byMonth) {
-  var canvas=document.getElementById("hh-dec-chart");
-  if(!canvas) return;
-  var months=Object.keys(byMonth).sort();
-  var labels=months.map(monthLabel);
-  var data=months.map(function(k){ return Math.round(byMonth[k].c/byMonth[k].n*100); });
-  drChart=destroyChart(drChart);
-  drChart=new Chart(canvas.getContext("2d"),{
-    type:"line",
-    data:{labels:labels,datasets:[{label:"% правильних рішень",data:data,backgroundColor:"rgba(15,110,86,0.12)",borderColor:"#0F6E56",borderWidth:2,fill:true,pointRadius:3,tension:0.3}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(it){return it.raw+"% правильних";}}}},
-      scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+"%";},font:{size:10},color:"#999"},grid:{color:"rgba(0,0,0,0.06)"}},x:{ticks:{font:{size:10},color:"#999"},grid:{display:false}}}
-    }
-  });
-}
-
 // ============================================================
 // SECTION: RENDER — HH STATS
 // ============================================================
@@ -1581,9 +1517,7 @@ function refreshHHStats() {
   var pfEl=$e("fP"); pfEl.innerHTML="<option value=\"all\">All positions</option>";
   for(var i=0;i<PO.length;i++){if(s.pos[PO[i]]&&s.pos[PO[i]].n>1){var o=document.createElement("option"); o.value=PO[i]; o.textContent=PO[i]; pfEl.appendChild(o);}}
   hhPage=1; renderHL(1);
-  var dc=$e("hh-dec-cnt"); if(dc) dc.textContent=hands.length;
-  var dr=$e("hh-dec-r"); if(dr) dr.innerHTML="";
-  drLastResult=null;
+  afRes=[]; afSkip=[]; renderAuditTab();
   var ar=$e("ai-res"); if(ar) ar.innerHTML="";
 }
 
@@ -2000,7 +1934,8 @@ function hhTab(n,b) {
   ["ov","rush","final","pos","hands","cards","weak","ranges","allin","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
   if(b) b.classList.add("on");
   var el=$e("hhT-"+n); if(el) el.style.display="block";
-  if(n==="ranges") renderRangeChart();
+  if(n==="ranges") renderRangesTab();
+  if(n==="ai") renderAuditTab();
 }
 function resTab(n,b) {
   document.querySelectorAll("#res-stabs .st").forEach(function(t){t.classList.remove("on");});
