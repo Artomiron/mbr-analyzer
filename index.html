@@ -950,7 +950,7 @@ function calcWeaknesses(all,rushS,st,n) {
 // ============================================================
 // SECTION: PREFLOP RANGES (imported JSON) + AUDIT
 // ============================================================
-var RG=null, afRes=[], afSkip=[], rgSpot=null, rgChart=null, rgMine=false;
+var RG=null, afRes=[], afSkip=[], rgSpot=null, rgChart=null, rgMine=false, rgBand="deep";
 var RG_RANKS="AKQJT98765432", AF_POS=["EP","EP+1","EP+2","MP","HJ","CO","BU"];
 var RG_COL={R:"#6D4BD8",A:"#C2185B",T:"#C0392B",C:"#0F6E56"};
 function rgIdb(){ return new Promise(function(res,rej){ var r=indexedDB.open("mbr-ranges",1); r.onupgradeneeded=function(){r.result.createObjectStore("kv");}; r.onsuccess=function(){res(r.result);}; r.onerror=function(){rej(r.error);}; }); }
@@ -976,13 +976,39 @@ async function rgRemove(){
   if(!confirm("Видалити завантажені діапазони з цього браузера?")) return;
   RG=null; afRes=[]; afSkip=[]; await rgPut(null); renderRangesTab(); renderAuditTab();
 }
+var RG_BANDS=[["deep","25bb+"],["mid","15–25bb"],["pf1014","10–14bb"],["pf09","0–9bb"]], rgPos="BU";
 function rgChartLabel(c){
-  if(c.spot==="rfi") return c.pos+" · "+c.pct+"%";
-  if(c.spot==="pushfold") return c.band.replace("-","–")+"bb · "+c.pos+" · "+c.pct+"%";
   if(c.spot==="bbdef") return {early:"проти ранніх",mid:"проти середніх",late:"проти пізніх"}[c.raiser]||c.raiser;
   return c.id;
 }
-function rgPickSpot(s){ rgSpot=s; rgChart=null; renderRangesTab(); }
+// "open" = RFI (25bb+, 15-25bb) and push/fold (10-14bb, 0-9bb) behind ONE stack switch
+function rgOpenAvail(band){
+  if(!RG) return [];
+  if(band==="deep"||band==="mid") return RG.doc.charts.filter(function(c){return c.spot==="rfi";});
+  var b=band==="pf1014"?"10-14":"0-9";
+  return RG.doc.charts.filter(function(c){return c.spot==="pushfold"&&c.band===b;});
+}
+function rgNearestPos(list,pos){
+  if(list.indexOf(pos)>-1) return pos;
+  if(pos==="SB") return list.indexOf("BU")>-1?"BU":list[list.length-1];
+  var m=afNearest(pos,list.filter(function(p){return AF_POS.indexOf(p)>-1;}));
+  return m?m.pos:list[0];
+}
+// the chart shown for hero position p at stack band (15-25bb: range of one position earlier)
+function rgChartFor(band,p){
+  var charts=rgOpenAvail(band); if(!charts.length) return null;
+  var list=charts.map(function(c){return c.pos;}), hero=rgNearestPos(list,p), look=hero;
+  if(band==="mid") look=rgNearestPos(list,AF_POS[Math.max(0,AF_POS.indexOf(hero)-1)]);
+  return {chart:charts.filter(function(x){return x.pos===look;})[0],hero:hero,shifted:band==="mid"};
+}
+function rgShown(){
+  if(!RG) return null;
+  if(rgSpot==="open") return rgChartFor(rgBand,rgPos);
+  return RG.by[rgChart]?{chart:RG.by[rgChart],hero:null,shifted:false}:null;
+}
+function rgPickSpot(s){ rgSpot=s; renderRangesTab(); }
+function rgPickBand(b){ rgBand=b; renderRangesTab(); }
+function rgPickPos(p){ rgPos=p; renderRangesTab(); }
 function rgPickChart(id){ rgChart=id; renderRangesTab(); }
 function renderRangesTab(){
   var el=$e("rg-body"); if(!el) return;
@@ -991,23 +1017,35 @@ function renderRangesTab(){
       "<input type=\"file\" accept=\".json,application/json\" onchange=\"rgImport(this.files[0]);this.value=''\"><div id=\"rg-msg\" style=\"margin-top:.5rem;font-size:12px\"></div>";
     return;
   }
-  var spots=Object.keys(RG.doc.spots).filter(function(s){return RG.doc.charts.some(function(c){return c.spot===s;});});
-  if(!rgSpot||spots.indexOf(rgSpot)<0) rgSpot=spots[0];
-  var charts=RG.doc.charts.filter(function(c){return c.spot===rgSpot;});
-  if(!rgChart||!RG.by[rgChart]||RG.by[rgChart].spot!==rgSpot) rgChart=charts[0].id;
-  var html="<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.6rem\">"+spots.map(function(s){return "<button class=\"btn"+(s===rgSpot?" btn-primary":"")+"\" onclick=\"rgPickSpot('"+s+"')\">"+RG.doc.spots[s].title+"</button>";}).join("")+"</div>"+
-    "<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem\">"+charts.map(function(c){return "<button class=\"btn"+(c.id===rgChart?" btn-primary":"")+"\" onclick=\"rgPickChart('"+c.id+"')\">"+rgChartLabel(c)+"</button>";}).join("")+"</div>"+
-    "<div id=\"rg-info\" style=\"font-size:12px;color:#666;margin-bottom:.6rem\"></div>"+
+  var hasOpen=RG_BANDS.some(function(b){return rgOpenAvail(b[0]).length>0;}), hasBB=RG.doc.charts.some(function(c){return c.spot==="bbdef";});
+  var spots=[]; if(hasOpen) spots.push(["open","Відкриття / пуш-фолд"]); if(hasBB) spots.push(["bbdef",(RG.doc.spots.bbdef&&RG.doc.spots.bbdef.title)||"Захист BB"]);
+  if(!spots.length){ el.innerHTML="<div class=\"alert a-info\">У файлі немає відомих діаграм.</div>"; return; }
+  if(rgSpot!=="open"&&rgSpot!=="bbdef"||!spots.some(function(s){return s[0]===rgSpot;})) rgSpot=spots[0][0];
+  var html="<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.6rem\">"+spots.map(function(s){return "<button class=\"btn"+(s[0]===rgSpot?" btn-primary":"")+"\" onclick=\"rgPickSpot('"+s[0]+"')\">"+s[1]+"</button>";}).join("")+"</div>";
+  if(rgSpot==="open"){
+    var bands=RG_BANDS.filter(function(b){return rgOpenAvail(b[0]).length>0;});
+    if(!bands.some(function(b){return b[0]===rgBand;})) rgBand=bands[0][0];
+    html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem\"><span style=\"font-size:12px;color:#666;min-width:46px\">Стек:</span>"+
+      bands.map(function(b){return "<button class=\"btn"+(b[0]===rgBand?" btn-primary":"")+"\" onclick=\"rgPickBand('"+b[0]+"')\">"+b[1]+"</button>";}).join("")+"</div>";
+    var cur=rgChartFor(rgBand,rgPos);   // rgPos stays what you picked (SB/HJ survive a stack change); cur.hero is the position actually shown
+    html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.75rem\"><span style=\"font-size:12px;color:#666;min-width:46px\">Позиція:</span>"+
+      rgOpenAvail(rgBand).map(function(c){ var sc=rgChartFor(rgBand,c.pos).chart; return "<button class=\"btn"+(c.pos===cur.hero?" btn-primary":"")+"\" onclick=\"rgPickPos('"+c.pos+"')\">"+c.pos+(sc.pct?" · "+sc.pct+"%":"")+"</button>"; }).join("")+"</div>";
+  } else {
+    var charts=RG.doc.charts.filter(function(c){return c.spot==="bbdef";});
+    if(!rgChart||!RG.by[rgChart]||RG.by[rgChart].spot!=="bbdef") rgChart=charts[0].id;
+    html+="<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem\">"+charts.map(function(c){return "<button class=\"btn"+(c.id===rgChart?" btn-primary":"")+"\" onclick=\"rgPickChart('"+c.id+"')\">"+rgChartLabel(c)+"</button>";}).join("")+"</div>";
+  }
+  html+="<div id=\"rg-info\" style=\"font-size:12px;color:#666;margin-bottom:.6rem\"></div>"+
     "<label style=\"font-size:12px;display:flex;gap:6px;align-items:center;margin-bottom:.75rem\"><input type=\"checkbox\" id=\"rg-mine\" onchange=\"rgDraw()\""+(rgMine?" checked":"")+"> Показати мою гру (спершу запустіть аудит у вкладці «Аудит»)</label>"+
     "<div id=\"rg-grid\" style=\"display:grid;grid-template-columns:repeat(13,1fr);gap:2px;max-width:640px;font-family:monospace\"></div>"+
     "<div style=\"margin-top:.9rem\"><button class=\"btn btn-danger\" style=\"font-size:11px\" onclick=\"rgRemove()\">Видалити діапазони з браузера</button></div>";
   el.innerHTML=html; rgDraw();
 }
 function rgDraw(){
-  var c=RG&&RG.by[rgChart], g=$e("rg-grid"); if(!c||!g) return;
+  var sh=rgShown(), c=sh&&sh.chart, g=$e("rg-grid"); if(!c||!g) return;
   var me=$e("rg-mine"); rgMine=!!(me&&me.checked);
-  var sp=RG.doc.spots[c.spot], codes=sp.codes, per={};
-  if(rgMine) afRes.forEach(function(r){ if(r.chart===c.id){ var p=per[r.hand]||(per[r.hand]={n:0,bad:0}); p.n++; if(!r.ok) p.bad++; } });
+  var sp=RG.doc.spots[c.spot]||{codes:{},note:""}, codes=sp.codes, per={};
+  if(rgMine) afRes.forEach(function(r){ if(r.chart===c.id&&(c.spot!=="rfi"||(sh.shifted?r.stack<25:r.stack>=25))){ var p=per[r.hand]||(per[r.hand]={n:0,bad:0}); p.n++; if(!r.ok) p.bad++; } });
   var html="", r, k;
   for(r=0;r<13;r++) for(k=0;k<13;k++){
     var nc=r===k?RG_RANKS[r]+RG_RANKS[r]:(r<k?RG_RANKS[r]+RG_RANKS[k]+"s":RG_RANKS[k]+RG_RANKS[r]+"o");
@@ -1018,7 +1056,7 @@ function rgDraw(){
   g.innerHTML=html;
   var legend=Object.keys(codes).map(function(kk){return "<span style=\"display:inline-flex;align-items:center;gap:4px;margin-right:12px\"><span style=\"width:11px;height:11px;border-radius:2px;background:"+(RG_COL[kk]||"#eee")+";border:1px solid #ccc\"></span>"+codes[kk]+"</span>";}).join("");
   var info=$e("rg-info");
-  if(info) info.innerHTML=legend+"<div style=\"margin-top:4px\">"+(sp.note||"")+(c.stackAssumed?" Межі стека — припущення.":"")+(c.spot==="rfi"?" Аудит: при стеку 15–25bb береться діапазон на одну позицію раніше, нижче 15bb — пуш/фолд.":"")+
+  if(info) info.innerHTML=legend+"<div style=\"margin-top:4px\">"+(sh.shifted?"<strong>Стек 15–25bb: для позиції "+sh.hero+" беремо діапазон "+c.pos+"</strong> (на одну позицію раніше, так само рахує аудит).":(sp.note||""))+(c.stackAssumed?" Межі стека — припущення.":"")+
     (rgMine?(afRes.length?" Жовта рамка: у цій руці були відхилення від еталона; «k/n» — скільки разів ви зіграли за еталоном.":" <strong>Аудит ще не запущено.</strong>"):"")+"</div>";
 }
 
@@ -2149,5 +2187,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:#999;pointer-events:none;z-index:5">v1.6.2</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:#999;pointer-events:none;z-index:5">v1.7</div>
 </body></html>
