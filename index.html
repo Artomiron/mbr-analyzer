@@ -158,6 +158,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 @media(max-width:780px){.rp-log{max-height:220px}}
 .rp-lh{font-size:10.5px;font-weight:650;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;padding:7px 8px 2px}
 .rp-lr{font-size:12.5px;padding:4px 8px;border-radius:7px;cursor:pointer;color:var(--text-2)}.rp-lr:hover{background:var(--hover-a)}.rp-lr.on{background:var(--accent-s);color:var(--accent-d)}
+.rp-s{margin-bottom:0}.rp-eq{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);font-size:10.5px;font-weight:700;border:1px solid;border-radius:8px;padding:0 6px;line-height:16px;font-variant-numeric:tabular-nums}
+.rp-eql{font-size:11.5px;margin-top:2px;font-weight:500}.rp-eqbar{display:flex;height:7px;border-radius:4px;overflow:hidden;margin-top:6px;background:var(--track)}.rp-eqbar i{display:block;height:100%;transition:width .2s}
 .rp-s.ko{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn-b)}.rp-kob{position:absolute;top:-8px;left:-6px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:0 6px;line-height:16px}
 .rp-ko{margin-top:8px;padding:.6rem .85rem;border:1px solid var(--ok-b);background:var(--ok-s);color:var(--ok-d);border-radius:var(--r-sm);font-size:13px;line-height:1.5}.rp-ko .amt{font-size:18px;font-weight:700;color:var(--ok)}.rp-ko small{display:block;font-size:11px;opacity:.8;margin-top:2px}
 .rp-ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:.8rem}
@@ -1843,6 +1845,57 @@ function rpKoInfo(h,P){
   }
   r.html=head+"<div style=\"margin-top:2px\">"+bt+"</div>"; return r;
 }
+var RP_EQC=["var(--accent)","var(--bad)","var(--warn)","var(--ok)","#38BDF8","#F472B6","#A78BFA","#94A3B8"];
+// multiway equity (ties split the pot). 2 players -> same aiEq as the header chip, so the numbers match.
+function rpEqN(cards,board,seed){
+  var n=cards.length;
+  if(n===2){ var e=aiEq(cards[0],cards[1],board,seed); return [e,1-e]; }
+  var used={}, deck=[], c, i, j; cards.forEach(function(h){h.forEach(function(x){used[x]=1;});}); board.forEach(function(x){used[x]=1;});
+  for(c=0;c<52;c++) if(!used[c]) deck.push(c);
+  var need=5-board.length, tot=[], cnt=0, bd=board.slice();
+  for(i=0;i<n;i++) tot.push(0);
+  function ev(){
+    var sc=cards.map(function(h){return aiScore7(h.concat(bd));}), mx=Math.max.apply(null,sc), w=0;
+    sc.forEach(function(x){ if(x===mx) w++; }); sc.forEach(function(x,k){ if(x===mx) tot[k]+=1/w; }); cnt++;
+  }
+  if(need===0) ev();
+  else if(need===1){ for(i=0;i<deck.length;i++){ bd[board.length]=deck[i]; ev(); } }
+  else if(need===2){ for(i=0;i<deck.length;i++){ bd[board.length]=deck[i]; for(j=i+1;j<deck.length;j++){ bd[board.length+1]=deck[j]; ev(); } } }
+  else {
+    var rng=aiRng(seed), d=deck.slice(), S=4000, k, t;
+    for(k=0;k<S;k++){ for(i=0;i<need;i++){ j=i+Math.floor(rng()*(d.length-i)); t=d[i]; d[i]=d[j]; d[j]=t; bd[board.length+i]=d[i]; } ev(); }
+  }
+  return tot.map(function(x){return cnt?x/cnt:1/n;});
+}
+// all-in runout: once every player still in the hand has revealed cards while the board is incomplete, attach equity to each step from there on.
+function rpEq(h,P){
+  if(P._eq!==undefined) return P._eq;
+  P._eq=null;
+  try{
+    var st=P.steps, j0=-1, al=null, j, s0;
+    for(j=0;j<st.length&&j0<0;j++){
+      s0=st[j]; if(s0.k!=="show"||s0.bd.length>=5) continue;
+      var a=P.order.filter(function(n){return !s0.f[n];});
+      if(a.length<2) continue;
+      if(a.every(function(n){return n==="Hero"?!!P.hole.Hero:!!s0.sh[n];})){ j0=j; al=a; }
+    }
+    if(j0<0) return null;
+    al.sort(function(x,y){return (y==="Hero"?1:0)-(x==="Hero"?1:0);});
+    var cards=al.map(function(n){ return (n==="Hero"?P.hole.Hero:st[j0].sh[n]).split(" ").map(aiCard); });
+    var seed=parseInt((h.id.match(/\d+/)||["1"])[0],10)||1, cache={};
+    for(j=j0;j<st.length;j++){
+      var bl=st[j].bd.length;
+      if(!cache[bl]) cache[bl]=rpEqN(cards,st[j].bd.map(aiCard),seed);
+      st[j].eq=cache[bl];
+    }
+    st[j0].eqFirst=1; P._eq={names:al,j0:j0};
+  }catch(e){ P._eq=null; }
+  return P._eq;
+}
+function rpEqTxt(s){
+  var E=RPL.P._eq; if(!E||!s.eq) return "";
+  return E.names.map(function(n,i){ return "<span style=\"color:"+RP_EQC[i%RP_EQC.length]+"\"><b>"+escH(rpName(n))+"</b> "+Math.round(s.eq[i]*100)+"%</span>"; }).join(" &middot; ");
+}
 function rpName(n){ return n==="Hero"?"Hero":n.slice(0,6); }
 function rpFmt(n){ var P=RPL.P; return RPL.unit==="bb"?(Math.round(n/P.bb*10)/10)+" bb":n.toLocaleString("en-US"); }
 function rpCard(c,bk,sm){
@@ -1857,8 +1910,8 @@ function rpLabel(s){
     case "start": return "Анте та блайнди";
     case "fold": return w+"фолд"; case "check": return w+"чек";
     case "call": return w+"колл "+rpFmt(s.amt)+a; case "bet": return w+"бет "+rpFmt(s.amt)+a; case "raise": return w+"рейз до "+rpFmt(s.amt)+a;
-    case "board": return s.street+" "+rpCards(s.txt,1);
-    case "show": return w+"показує "+rpCards(s.txt,1);
+    case "board": return s.street+" "+rpCards(s.txt,1)+(s.eq?"<div class=\"rp-eql\">"+rpEqTxt(s)+"</div>":"");
+    case "show": return w+"показує "+rpCards(s.txt,1)+(s.eqFirst?"<div class=\"rp-eql\">Еквіті: "+rpEqTxt(s)+"</div>":"");
     case "ret": return "Повернено "+rpFmt(s.amt)+" → <strong>"+escH(rpName(s.w))+"</strong>";
     case "win": return w+"забирає "+rpFmt(s.amt);
   }
@@ -1877,7 +1930,7 @@ function rpLoad(h){
   rpStop(); RPL.h=h; RPL.id=h.id; RPL.P=rpParse(h); RPL.i=0; RPL.raw=false;
   var P=RPL.P, ov=$e("rp-ov");
   if(!P.steps.length){ ov.innerHTML="<div class=\"rp-box\"><div style=\"display:flex;justify-content:space-between\"><strong>Не вдалося розібрати роздачу</strong><button class=\"btn\" onclick=\"rpClose()\">&times;</button></div><pre style=\"margin-top:.8rem;max-height:60vh;overflow:auto\">"+escH(h.raw.trim())+"</pre></div>"; return; }
-  var ix=RPL.ids.indexOf(h.id), res=P.net, aiR=aiHandResult(h), koI=h.knockout?rpKoInfo(h,P):null;
+  rpEq(h,P); var ix=RPL.ids.indexOf(h.id), res=P.net, aiR=aiHandResult(h), koI=h.knockout?rpKoInfo(h,P):null;
   var streets=["Флоп","Тьорн","Рівер"].filter(function(s){return P.steps.some(function(x){return x.k==="board"&&x.street===s;});});
   ov.innerHTML="<div class=\"rp-box\">"+
    "<div style=\"display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:.7rem;flex-wrap:wrap\"><div>"+
@@ -1916,14 +1969,17 @@ function rpDraw(){
     else if(!fd) cards=s.sh[n]?rpCards(s.sh[n],1):rpCard("",1,1)+rpCard("",1,1);
     var isKo=P.ko.indexOf(n)>-1&&RPL.i>=P.winFrom;
     var cls="rp-s"+(fd?" fd":"")+(isKo?" ko":"")+(s.w===n&&s.k!=="win"&&s.k!=="ret"?" act":"")+(s.k==="win"&&s.w===n?" win":"");
-    var pos=P.pos[n]||"";
+    var pos=P.pos[n]||"", eqb="";
+    if(s.eq&&P._eq&&!fd){ var ei=P._eq.names.indexOf(n); if(ei>-1){ var ev=Math.round(s.eq[ei]*100); eqb="<span class=\"rp-eq\" style=\"background:"+(ev>=50?"var(--ok-s)":"var(--bad-s)")+";color:"+(ev>=50?"var(--ok-d)":"var(--bad-d)")+";border-color:"+(ev>=50?"var(--ok-b)":"var(--bad-b)")+"\">"+ev+"%</span>"; } }
     h+="<div class=\""+cls+"\" style=\"left:"+p[0].toFixed(1)+"%;top:"+p[1].toFixed(1)+"%\">"+(pos.indexOf("BTN")===0?"<span class=\"rp-d\">D</span>":"")+(isKo?"<span class=\"rp-kob\">KO</span>":"")+
        "<div class=\"nm\">"+escH(rpName(n))+" <span style=\"color:var(--faint);font-weight:500;font-size:10.5px\">"+pos+"</span></div>"+
-       "<div class=\"sk\">"+(s.st[n]<=0?(s.ai[n]?"олл-ін":"0"):rpFmt(s.st[n]))+"</div><div>"+cards+"</div></div>";
+       "<div class=\"sk\">"+(s.st[n]<=0?(s.ai[n]?"олл-ін":"0"):rpFmt(s.st[n]))+"</div><div>"+cards+"</div>"+eqb+"</div>";
     if(s.b[n]>0) h+="<div class=\"rp-bet\" style=\"left:"+p[2].toFixed(1)+"%;top:"+p[3].toFixed(1)+"%\">"+rpFmt(s.b[n])+"</div>";
   });
   $e("rp-t").innerHTML=h;
-  $e("rp-cap").innerHTML=rpLabel(s);
+  var capEq="";
+  if(s.eq&&P._eq){ capEq="<div class=\"rp-eqbar\">"+s.eq.map(function(x,i){ return "<i style=\"width:"+(x*100).toFixed(1)+"%;background:"+RP_EQC[i%RP_EQC.length]+"\"></i>"; }).join("")+"</div><div style=\"font-size:12.5px;margin-top:4px\">Еквіті: "+rpEqTxt(s)+"</div>"; }
+  $e("rp-cap").innerHTML=rpLabel(s).replace(/<div class="rp-eql">.*?<\/div>/,"")+capEq;
   $e("rp-sl").value=RPL.i;
   var lg="", g="";
   P.steps.forEach(function(x,j){
@@ -2845,5 +2901,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.14</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.15</div>
 </body></html>
