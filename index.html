@@ -134,6 +134,32 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 .sr:last-child{border-bottom:none}.sr-l{font-size:13px;color:var(--muted)}.sr-v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .sec-l{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem}
 
+
+/* hand replayer */
+#rp-ov{position:fixed;inset:0;background:rgba(5,8,15,.68);z-index:60;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:2vh 12px}
+.rp-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-2);width:100%;max-width:1020px;padding:1rem 1.15rem 1.1rem}
+.rp-g{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:14px;align-items:start}
+@media(max-width:780px){.rp-g{grid-template-columns:1fr}}
+.rp-t{position:relative;height:410px;background:var(--soft-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+@media(max-width:520px){.rp-t{height:470px}.rp-s{width:70px;padding:3px 2px 4px}.rp-s .nm{font-size:10px}.rp-s .sk{font-size:10px}.rp-s .rc.sm{min-width:20px;height:26px;line-height:26px;font-size:10px;padding:0 1px}.rp-bet{font-size:10px;padding:1px 6px}.rp-brd .rc{min-width:24px;height:33px;line-height:33px;font-size:12px}}
+.rp-felt{position:absolute;left:6%;right:6%;top:8%;bottom:8%;border-radius:50%;background:var(--ok-s);border:1px solid var(--ok-b)}
+.rp-s{position:absolute;transform:translate(-50%,-50%);width:94px;text-align:center;background:var(--surface);border:1px solid var(--line-2);border-radius:10px;padding:4px 3px 5px;box-shadow:var(--sh-1);transition:opacity .15s,border-color .15s}
+.rp-s .nm{font-size:11.5px;font-weight:650;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rp-s .sk{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;margin-bottom:2px}
+.rp-s.fd{opacity:.38}.rp-s.act{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-b)}.rp-s.win{border-color:var(--ok);box-shadow:0 0 0 2px var(--ok-b)}
+.rp-d{position:absolute;top:-8px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--warn-s);border:1px solid var(--warn-b);color:var(--warn-d);font-size:10px;font-weight:700;line-height:16px}
+.rp-bet{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:650;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:1px 8px;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--text)}
+.rp-pot{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);font-size:12px;font-weight:650;color:var(--text-2);white-space:nowrap}
+.rp-brd{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);white-space:nowrap}
+.rc{display:inline-block;min-width:26px;height:36px;line-height:36px;padding:0 2px;border-radius:5px;background:#fff;border:1px solid #AEB4C2;font-size:13px;font-weight:700;margin:0 1px;color:#1F2937;vertical-align:middle}
+.rc.r{color:#C81E1E}.rc.sm{min-width:23px;height:30px;line-height:30px;font-size:11.5px}.rc.bk{background:#4F46E5;border-color:#3730A3}
+.rp-cap{margin-top:8px;font-size:14px;min-height:24px;padding:.45rem .8rem;background:var(--soft-2);border:1px solid var(--line);border-radius:var(--r-sm)}
+.rp-cap .rc,.rp-lr .rc{min-width:22px;height:22px;line-height:20px;font-size:11px;vertical-align:-5px}
+.rp-log{max-height:462px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--r);padding:6px;background:var(--surface);scrollbar-width:thin;position:relative}
+@media(max-width:780px){.rp-log{max-height:220px}}
+.rp-lh{font-size:10.5px;font-weight:650;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;padding:7px 8px 2px}
+.rp-lr{font-size:12.5px;padding:4px 8px;border-radius:7px;cursor:pointer;color:var(--text-2)}.rp-lr:hover{background:var(--hover-a)}.rp-lr.on{background:var(--accent-s);color:var(--accent-d)}
+.rp-ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:.8rem}
+
 /* month chips + pagination */
 .mchk{display:inline-flex;align-items:center;gap:5px;padding:.32rem .8rem;border:1px solid var(--line-2);border-radius:20px;cursor:pointer;background:var(--surface);font-size:12px;font-weight:550;color:var(--muted);user-select:none;transition:all .12s}
 .mchk:hover{border-color:var(--faint);color:var(--text)}.mchk.on{background:var(--accent-s);border-color:var(--accent-b);color:var(--accent-d)}
@@ -329,15 +355,20 @@ details[open]>summary::before{transform:rotate(90deg)}
     <div id="rT-bounty" style="display: block;"><div class="card"><div class="card-hdr">💰 Mystery Bounty analysis</div><div id="res-bounty-c"></div></div></div>
     <div id="rT-list" style="display:none">
       <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px">
           <div class="card-hdr" style="margin:0">List <span id="res-tcnt"></span></div>
-          <div style="display:flex;gap:5px">
-            <select id="rfR" onchange="renderRL()"><option value="all">All</option><option value="itm">ITM</option><option value="ft">FT</option><option value="miss">Rush bust</option></select>
-            <select id="rfS" onchange="renderRL()"><option value="date">Date</option><option value="place">Place</option><option value="prize">Prize</option></select>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <select id="rfP" onchange="tlPeriodChange()" title="Period">
+              <option value="all">All time</option><option value="24h">Last 24 hours</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option><option value="thism">This month</option><option value="lastm">Last month</option><option value="custom">Custom range…</option></select>
+            <span id="rfC" style="display:none;gap:4px;align-items:center"><input type="date" id="rfF" onchange="tlReset()"><span style="color:var(--faint)">–</span><input type="date" id="rfT" onchange="tlReset()"></span>
+            <select id="rfR" onchange="tlReset()"><option value="all">All results</option><option value="itm">ITM (top 3)</option><option value="ft">Final table</option><option value="miss">Rush bust</option><option value="ko">With knockouts</option></select>
           </div>
         </div>
+        <div class="sgrid" id="res-tsum" style="margin-bottom:.9rem"></div>
         <div id="res-td" style="display:none;margin-bottom:.875rem"></div>
-        <div class="hlist" id="res-tl"></div>
+        <div style="overflow-x:auto" id="res-tl"></div>
+        <div id="res-tmore" style="text-align:center;margin-top:.7rem"></div>
       </div>
     </div>
     <div id="rT-roi" style="display: none;"><div class="card"><div class="card-hdr">ROI &amp; Profit</div><div id="res-roi-c"></div></div></div>
@@ -1596,15 +1627,212 @@ function renderAllin(rs){
               y:{title:{display:true,text:"Cumulative luck (bb)",font:{size:11},color:CHC("--faint")},ticks:{font:{size:10},color:CHC("--faint")},grid:{color:CHC("--grid")}}}}});
 }
 
-// open a hand's detail from anywhere (switches to Hand History → Hands)
-function openHand(id){
+// open a hand's detail from anywhere: now opens the visual replayer (the old text view stays one click away)
+function openHand(id){ openReplay(id); }
+function openHandText(id){
   if(!HH.some(function(h){return h.id===id;})) return;
+  rpClose();
   switchMain("hh",document.querySelectorAll(".ntab")[0]);
   if($e("HH-res").style.display==="none") doHH();
   $e("HH-up").style.display="none"; $e("HH-res").style.display="block";
   hhTab("hands",document.querySelectorAll("#hh-stabs .st")[4]);
   showHand(id);
 }
+
+// ============================================================
+// SECTION: HAND REPLAYER (view only; shows only what the hand history reveals)
+// ============================================================
+var RPC={}, RPL={id:null,ids:[],h:null,P:null,i:0,tm:null,unit:"bb",raw:false}, rpCtx=[];
+var RP_SUIT={h:"♥",d:"♦",c:"♣",s:"♠"};
+var RP_LAB={2:["BB","BTN/SB"],3:["BTN","SB","BB"],4:["CO","BTN","SB","BB"],5:["UTG","CO","BTN","SB","BB"],6:["UTG","HJ","CO","BTN","SB","BB"],7:["UTG","LJ","HJ","CO","BTN","SB","BB"],8:["UTG","UTG+1","LJ","HJ","CO","BTN","SB","BB"],9:["UTG","UTG+1","UTG+2","LJ","HJ","CO","BTN","SB","BB"]};
+function rpNum(s){ return parseInt(String(s).replace(/,/g,""),10)||0; }
+function rpParse(h){
+  if(RPC[h.id]) return RPC[h.id];
+  var lines=h.raw.split("\n"), P={seats:[],btn:0,bb:h.bb||1,steps:[],hole:{},sum:{},net:0,pos:{},order:[],xy:{},hero:"Hero"}, m, i, ln, st=0;
+  m=lines[0].match(/Level\d+\(([\d,]+)\/([\d,]+)/); if(m) P.bb=rpNum(m[2]);
+  var stack={}, init={}, bet={}, fold={}, ai={}, shown={}, board=[], pot=0, street="Префлоп";
+  function sum(){ var t=0,k; for(k in bet) t+=bet[k]; return t; }
+  function snap(k,w,amt,txt){ P.steps.push({k:k,w:w,amt:amt||0,txt:txt||"",street:street,st:Object.assign({},stack),b:Object.assign({},bet),pot:pot+sum(),f:Object.assign({},fold),ai:Object.assign({},ai),sh:Object.assign({},shown),bd:board.slice()}); }
+  function sweep(){ pot+=sum(); bet={}; }
+  for(i=0;i<lines.length;i++){
+    ln=lines[i].replace(/\r$/,"");
+    m=ln.match(/^Table '[^']*' (\d+)-max Seat #(\d+) is the button/); if(m){ P.btn=+m[2]; continue; }
+    if(st===0){ m=ln.match(/^Seat (\d+): (\S+) \(([\d,]+) in chips\)/); if(m){ P.seats.push({s:+m[1],n:m[2]}); stack[m[2]]=init[m[2]]=rpNum(m[3]); continue; } }
+    m=ln.match(/^(\S+): posts (?:the ante|small blind|big blind|small & big blinds) ([\d,]+)/);
+    if(m){ var pa=rpNum(m[2]); stack[m[1]]-=pa; if(ln.indexOf("the ante")>-1) pot+=pa; else bet[m[1]]=(bet[m[1]]||0)+pa; continue; }
+    if(ln.indexOf("*** HOLE CARDS ***")===0){ st=1; snap("start",null); continue; }
+    m=ln.match(/^Dealt to (\S+) \[([^\]]+)\]/); if(m){ P.hole[m[1]]=m[2]; continue; }
+    m=ln.match(/^\*\*\* (FLOP|TURN|RIVER) \*\*\* (.*)$/);
+    if(m){ sweep(); var g=[]; m[2].replace(/\[([^\]]+)\]/g,function(_,x){ g.push(x); return ""; }); board=(m[1]==="FLOP"?g[0]:g[0]+" "+g[1]).split(" "); street={FLOP:"Флоп",TURN:"Тьорн",RIVER:"Рівер"}[m[1]]; snap("board",null,0,board.join(" ")); continue; }
+    if(ln.indexOf("*** SHOWDOWN ***")===0){ sweep(); street="Результат"; continue; }
+    if(ln.indexOf("*** SUMMARY ***")===0){ st=2; continue; }
+    if(st===2){ m=ln.match(/^Seat \d+: (\S+).*? showed \[([^\]]+)\]/); if(m) P.sum[m[1]]=m[2]; continue; }
+    if(st!==1) continue;
+    m=ln.match(/^Uncalled bet \(([\d,]+)\) returned to (\S+)/); if(m){ var u=rpNum(m[1]); stack[m[2]]+=u; bet[m[2]]=(bet[m[2]]||0)-u; snap("ret",m[2],u); continue; }
+    m=ln.match(/^(\S+) collected ([\d,]+) from pot/); if(m){ var c=rpNum(m[2]); sweep(); pot=Math.max(0,pot-c); stack[m[1]]+=c; snap("win",m[1],c); continue; }
+    m=ln.match(/^(\S+): (folds|checks|calls ([\d,]+)|bets ([\d,]+)|raises ([\d,]+) to ([\d,]+)|shows \[([^\]]+)\])( and is all-in)?/);
+    if(!m) continue;
+    var n=m[1], a=m[2], an;
+    if(m[8]) ai[n]=1;
+    if(a==="folds"){ fold[n]=1; snap("fold",n); }
+    else if(a==="checks") snap("check",n);
+    else if(m[3]){ an=rpNum(m[3]); stack[n]-=an; bet[n]=(bet[n]||0)+an; snap("call",n,an); }
+    else if(m[4]){ an=rpNum(m[4]); stack[n]-=an; bet[n]=(bet[n]||0)+an; snap("bet",n,an); }
+    else if(m[6]){ var to=rpNum(m[6]); stack[n]-=(to-(bet[n]||0)); bet[n]=to; snap("raise",n,to); }
+    else if(m[7]){ shown[n]=m[7]; snap("show",n,0,m[7]); }
+  }
+  if(!P.steps.length||!P.seats.length){ RPC[h.id]=P; return P; }
+  var last=P.steps[P.steps.length-1]; for(var k in P.sum) if(!last.sh[k]) last.sh[k]=P.sum[k];
+  P.net=((stack.Hero||0)-(init.Hero||0))/P.bb;
+  var seats=P.seats.slice().sort(function(a,b){return a.s-b.s;}), n2=seats.length, bi=0;
+  seats.forEach(function(s,j){ if(s.s===P.btn) bi=j; });
+  var labs=RP_LAB[n2]||[];
+  seats.forEach(function(s,j){ var o=(j-bi+n2)%n2; P.pos[s.n]=labs.length?labs[(o-3+n2*3)%n2]:""; });
+  var hi=0; seats.forEach(function(s,j){ if(s.n==="Hero") hi=j; });
+  for(var j2=0;j2<n2;j2++){
+    var pl=seats[(hi+j2)%n2].n, th=(90+j2*360/n2)*Math.PI/180, x=50+38*Math.cos(th), y=46+37*Math.sin(th);
+    P.order.push(pl); P.xy[pl]=[x,y,50+(x-50)*0.56,46+(y-46)*0.56];
+  }
+  RPC[h.id]=P; return P;
+}
+function rpName(n){ return n==="Hero"?"Hero":n.slice(0,6); }
+function rpFmt(n){ var P=RPL.P; return RPL.unit==="bb"?(Math.round(n/P.bb*10)/10)+" bb":n.toLocaleString("en-US"); }
+function rpCard(c,bk,sm){
+  if(bk) return "<span class=\"rc bk"+(sm?" sm":"")+"\"></span>";
+  var su=c.charAt(1), r=c.charAt(0)==="T"?"10":c.charAt(0);
+  return "<span class=\"rc"+(su==="h"||su==="d"?" r":"")+(sm?" sm":"")+"\">"+r+RP_SUIT[su]+"</span>";
+}
+function rpCards(str,sm){ return str.split(" ").map(function(c){return rpCard(c,0,sm);}).join(""); }
+function rpLabel(s){
+  var w=s.w?"<strong>"+escH(rpName(s.w))+"</strong> ":"", a=(s.k==="call"||s.k==="bet"||s.k==="raise")&&s.ai?" · олл-ін":"";
+  switch(s.k){
+    case "start": return "Анте та блайнди";
+    case "fold": return w+"фолд"; case "check": return w+"чек";
+    case "call": return w+"колл "+rpFmt(s.amt)+a; case "bet": return w+"бет "+rpFmt(s.amt)+a; case "raise": return w+"рейз до "+rpFmt(s.amt)+a;
+    case "board": return s.street+" "+rpCards(s.txt,1);
+    case "show": return w+"показує "+rpCards(s.txt,1);
+    case "ret": return "Повернено "+rpFmt(s.amt)+" → <strong>"+escH(rpName(s.w))+"</strong>";
+    case "win": return w+"забирає "+rpFmt(s.amt);
+  }
+  return "";
+}
+function rpFindHand(id){ for(var i=0;i<HH.length;i++) if(HH[i].id===id) return HH[i]; return null; }
+function openReplay(id,ids){
+  var h=rpFindHand(id); if(!h) return;
+  RPL.ids=(ids&&ids.length)?ids:(rpCtx.indexOf(id)>-1?rpCtx:[id]);
+  var ov=$e("rp-ov");
+  if(!ov){ ov=document.createElement("div"); ov.id="rp-ov"; ov.onclick=function(e){ if(e.target===ov) rpClose(); }; document.body.appendChild(ov); }
+  ov.style.display="flex"; document.body.style.overflow="hidden";
+  rpLoad(h);
+}
+function rpLoad(h){
+  rpStop(); RPL.h=h; RPL.id=h.id; RPL.P=rpParse(h); RPL.i=0; RPL.raw=false;
+  var P=RPL.P, ov=$e("rp-ov");
+  if(!P.steps.length){ ov.innerHTML="<div class=\"rp-box\"><div style=\"display:flex;justify-content:space-between\"><strong>Не вдалося розібрати роздачу</strong><button class=\"btn\" onclick=\"rpClose()\">&times;</button></div><pre style=\"margin-top:.8rem;max-height:60vh;overflow:auto\">"+escH(h.raw.trim())+"</pre></div>"; return; }
+  var ix=RPL.ids.indexOf(h.id), res=P.net, aiR=aiHandResult(h);
+  var streets=["Флоп","Тьорн","Рівер"].filter(function(s){return P.steps.some(function(x){return x.k==="board"&&x.street===s;});});
+  ov.innerHTML="<div class=\"rp-box\">"+
+   "<div style=\"display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:.7rem;flex-wrap:wrap\"><div>"+
+     "<div style=\"font-size:15px;font-weight:650\">Hand "+escH(h.id)+" <span class=\""+h.stage+"\">"+h.stage.toUpperCase()+"</span></div>"+
+     "<div style=\"font-size:12px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:2px\">Tournament #"+h.tid+" &middot; "+(h.date?tlFmtDate(h.date):"--")+" &middot; BB "+P.bb+" &middot; "+(P.seats.length)+" гравців</div></div>"+
+     "<div style=\"display:flex;gap:6px;align-items:center;flex-wrap:wrap\">"+
+       (aiR?pill("p-amber","All-in equity "+Math.round(aiR.eq*100)+"% &middot; "+(aiR.luckBB>=0?"+":"")+aiR.luckBB.toFixed(1)+"bb vs EV"):"")+
+       (h.knockout?pill("p-green","KNOCKOUT"):"")+
+       "<span class=\""+(res>=0?"hw":"hl")+"\" style=\"font-weight:650;font-size:15px\">Hero "+(res>=0?"+":"")+(Math.round(res*10)/10)+" bb</span>"+
+       "<button class=\"btn\" onclick=\"rpClose()\" title=\"Esc\">&times; Закрити</button></div></div>"+
+   "<div class=\"rp-g\"><div><div class=\"rp-t\" id=\"rp-t\"></div><div id=\"rp-cap\" class=\"rp-cap\"></div></div><div><div id=\"rp-log\" class=\"rp-log\"></div></div></div>"+
+   "<div class=\"rp-ctl\">"+
+     "<button class=\"btn\" onclick=\"rpGo(0)\" title=\"На початок\">&#9198;</button><button class=\"btn\" onclick=\"rpStep(-1)\" title=\"Крок назад (←)\">&#9664;</button>"+
+     "<button class=\"btn btn-primary\" id=\"rp-pl\" onclick=\"rpPlay()\" style=\"min-width:46px;justify-content:center\" title=\"Пробіл\">&#9654;</button>"+
+     "<button class=\"btn\" onclick=\"rpStep(1)\" title=\"Крок вперед (→)\">&#9654;&#9654;</button><button class=\"btn\" onclick=\"rpGo(9999)\" title=\"В кінець\">&#9197;</button>"+
+     "<input type=\"range\" id=\"rp-sl\" min=\"0\" max=\""+(P.steps.length-1)+"\" value=\"0\" step=\"1\" oninput=\"rpStop();rpGo(+this.value)\" style=\"flex:1;min-width:120px\">"+
+   "</div>"+
+   "<div class=\"rp-ctl\" style=\"margin-top:.5rem\">"+
+     "<button class=\"btn\" onclick=\"rpGo(0)\">Префлоп</button>"+streets.map(function(s){ return "<button class=\"btn\" onclick=\"rpStreet('"+s+"')\">"+s+"</button>"; }).join("")+"<button class=\"btn\" onclick=\"rpGo(9999)\">Результат</button>"+
+     "<span style=\"flex:1\"></span>"+
+     "<select id=\"rp-spd\" title=\"Швидкість\"><option value=\"1800\">0.5×</option><option value=\"1100\" selected>1×</option><option value=\"600\">2×</option></select>"+
+     "<button class=\"btn\" id=\"rp-un\" onclick=\"rpUnit()\">bb / фішки</button>"+
+     "<button class=\"btn\" id=\"rp-rw\" onclick=\"rpRaw()\">Текст</button>"+
+   "</div>"+
+   (RPL.ids.length>1?"<div class=\"rp-ctl\" style=\"margin-top:.5rem;justify-content:center\"><button class=\"btn\" onclick=\"rpHandNav(-1)\" "+(ix<=0?"disabled":"")+" title=\"↑\">&#8249; Попередня рука</button><span style=\"font-size:12px;color:var(--muted)\">"+(ix+1)+" / "+RPL.ids.length+"</span><button class=\"btn\" onclick=\"rpHandNav(1)\" "+(ix>=RPL.ids.length-1?"disabled":"")+" title=\"↓\">Наступна рука &#8250;</button></div>":"")+
+   "<div style=\"font-size:11px;color:var(--faint);margin-top:.6rem;text-align:center\">← → кроки · пробіл — грати · ↑ ↓ — інші руки · Esc — закрити. Видно лише ті карти, які відкриті в самій роздачі.</div>"+
+  "</div>";
+  rpDraw();
+}
+function rpDraw(){
+  var P=RPL.P, s=P.steps[RPL.i], hero=P.hole.Hero, h="<div class=\"rp-felt\"></div>";
+  h+="<div class=\"rp-pot\">"+(s.pot>0?"Банк "+rpFmt(s.pot):"")+"</div><div class=\"rp-brd\">"+(s.bd.length?rpCards(s.bd.join(" ")):"")+"</div>";
+  P.order.forEach(function(n){
+    var p=P.xy[n], fd=!!s.f[n], cards="";
+    if(n==="Hero"&&hero) cards=rpCards(hero,1);
+    else if(!fd) cards=s.sh[n]?rpCards(s.sh[n],1):rpCard("",1,1)+rpCard("",1,1);
+    var cls="rp-s"+(fd?" fd":"")+(s.w===n&&s.k!=="win"&&s.k!=="ret"?" act":"")+(s.k==="win"&&s.w===n?" win":"");
+    var pos=P.pos[n]||"";
+    h+="<div class=\""+cls+"\" style=\"left:"+p[0].toFixed(1)+"%;top:"+p[1].toFixed(1)+"%\">"+(pos.indexOf("BTN")===0?"<span class=\"rp-d\">D</span>":"")+
+       "<div class=\"nm\">"+escH(rpName(n))+" <span style=\"color:var(--faint);font-weight:500;font-size:10.5px\">"+pos+"</span></div>"+
+       "<div class=\"sk\">"+(s.st[n]<=0?(s.ai[n]?"олл-ін":"0"):rpFmt(s.st[n]))+"</div><div>"+cards+"</div></div>";
+    if(s.b[n]>0) h+="<div class=\"rp-bet\" style=\"left:"+p[2].toFixed(1)+"%;top:"+p[3].toFixed(1)+"%\">"+rpFmt(s.b[n])+"</div>";
+  });
+  $e("rp-t").innerHTML=h;
+  $e("rp-cap").innerHTML=rpLabel(s);
+  $e("rp-sl").value=RPL.i;
+  var lg="", g="";
+  P.steps.forEach(function(x,j){
+    if(x.street!==g){ g=x.street; lg+="<div class=\"rp-lh\">"+g+"</div>"; }
+    lg+="<div class=\"rp-lr"+(j===RPL.i?" on":"")+"\" data-j=\""+j+"\">"+rpLabel(x)+"</div>";
+  });
+  var L=$e("rp-log");
+  if(RPL.raw) L.innerHTML="<pre style=\"font-size:11px;line-height:1.5;white-space:pre-wrap;color:var(--muted)\">"+escH(RPL.h.raw.trim())+"</pre>";
+  else {
+    L.innerHTML=lg;
+    [].forEach.call(L.querySelectorAll(".rp-lr"),function(e){ e.onclick=function(){ rpStop(); rpGo(+e.getAttribute("data-j")); }; });
+    var on=L.querySelector(".on"); if(on){ var t=on.offsetTop-L.clientHeight/2+on.clientHeight/2; L.scrollTop=Math.max(0,t); }
+  }
+}
+function rpGo(n){ RPL.i=Math.max(0,Math.min(RPL.P.steps.length-1,n)); rpDraw(); }
+function rpStep(d){ rpStop(); rpGo(RPL.i+d); }
+function rpStreet(name){ var P=RPL.P; for(var j=0;j<P.steps.length;j++) if(P.steps[j].k==="board"&&P.steps[j].street===name){ rpStop(); rpGo(j); return; } }
+function rpStop(){ if(RPL.tm){ clearInterval(RPL.tm); RPL.tm=null; var b=$e("rp-pl"); if(b) b.innerHTML="&#9654;"; } }
+function rpPlay(){
+  if(RPL.tm){ rpStop(); return; }
+  if(RPL.i>=RPL.P.steps.length-1) rpGo(0);
+  $e("rp-pl").innerHTML="&#10074;&#10074;";
+  RPL.tm=setInterval(function(){ if(RPL.i>=RPL.P.steps.length-1){ rpStop(); return; } rpGo(RPL.i+1); },+$e("rp-spd").value);
+}
+function rpUnit(){ RPL.unit=RPL.unit==="bb"?"chips":"bb"; rpDraw(); }
+function rpRaw(){ RPL.raw=!RPL.raw; rpDraw(); }
+function rpHandNav(d){ var ix=RPL.ids.indexOf(RPL.id)+d; if(ix<0||ix>=RPL.ids.length) return; var h=rpFindHand(RPL.ids[ix]); if(h) rpLoad(h); }
+function rpClose(){ rpStop(); var ov=$e("rp-ov"); if(ov) ov.style.display="none"; document.body.style.overflow=""; }
+document.addEventListener("keydown",function(e){
+  var ov=$e("rp-ov"); if(!ov||ov.style.display==="none"||!RPL.P||!RPL.P.steps.length) return;
+  if(e.target&&(e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA")) return;
+  if(e.key==="Escape") rpClose();
+  else if(e.key==="ArrowRight"){ e.preventDefault(); rpStep(1); }
+  else if(e.key==="ArrowLeft"){ e.preventDefault(); rpStep(-1); }
+  else if(e.key==="ArrowDown"){ e.preventDefault(); rpHandNav(1); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); rpHandNav(-1); }
+  else if(e.key===" "){ e.preventDefault(); rpPlay(); }
+});
+
+// tournament hands table (filterable) with replay
+var tdHs=[], tdAiSet={}, tdF="all";
+function tdSetFilter(f){ tdF=f; tdHandsRender(); }
+function tdHandsRender(){
+  var el=$e("td-hands"); if(!el) return;
+  var rows=tdHs.map(function(h,i){ var P=rpParse(h); return {h:h,i:i,net:P.steps.length?P.net:null,sd:/ (showed|shows) \[/.test(h.raw)||h.raw.indexOf(": shows [")>-1,ai:!!tdAiSet[h.id]}; });
+  var F={all:function(){return true;},sd:function(r){return r.sd;},ai:function(r){return r.ai;},ko:function(r){return r.h.knockout;},won:function(r){return r.net>0.05;},lost:function(r){return r.net<-0.05;}};
+  var cnt={}; Object.keys(F).forEach(function(k){ cnt[k]=rows.filter(F[k]).length; });
+  var names={all:"Усі",sd:"Шоудауни",ai:"Олл-іни",ko:"Нокаути",won:"Виграні",lost:"Програні"};
+  var vis=rows.filter(F[tdF]), ids=vis.map(function(r){return r.h.id;});
+  var html="<div class=\"sec-l\">Hands</div><div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.6rem\">"+Object.keys(names).map(function(k){ return "<span class=\"mchk"+(k===tdF?" on":"")+"\" onclick=\"tdSetFilter('"+k+"')\">"+names[k]+" · "+cnt[k]+"</span>"; }).join("")+"</div>";
+  html+="<div style=\"overflow-x:auto;max-height:360px;overflow-y:auto\"><table class=\"btable\" style=\"min-width:560px\"><thead><tr><th>#</th><th>Stage</th><th>Pos</th><th style=\"text-align:right\">Stack</th><th>Cards</th><th>Board</th><th style=\"text-align:right\">Result</th><th></th></tr></thead><tbody>"+
+    vis.map(function(r){ var h=r.h;
+      return "<tr style=\"cursor:pointer\" onclick=\"openReplay('"+h.id+"',tdVisIds)\"><td>"+(r.i+1)+"</td><td><span class=\""+h.stage+"\">"+h.stage.toUpperCase()+"</span></td><td>"+h.pos+"</td><td style=\"text-align:right\">"+h.stackBB+"bb</td>"+
+        "<td style=\"font-family:ui-monospace,SFMono-Regular,Menlo,monospace\">"+(h.cards?"["+h.cards+"] "+h.normCards:"")+"</td><td style=\"font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--muted)\">"+(h.board||"&mdash;")+"</td>"+
+        "<td style=\"text-align:right\" class=\""+(r.net>0.05?"hw":"hl")+"\">"+(r.net===null?"&mdash;":(r.net>0?"+":"")+(Math.round(r.net*10)/10)+"bb")+"</td><td>"+(h.knockout?pill("p-green","KO"):"")+(r.ai?" "+pill("p-amber","all-in"):"")+"</td></tr>"; }).join("")+"</tbody></table></div>";
+  el.innerHTML=html; tdVisIds=ids; rpCtx=ids;
+}
+var tdVisIds=[];
 
 // ---------------- tournament drill-down ----------------
 var tdChart=null;
@@ -1657,10 +1885,12 @@ function openTournament(id){
     "<span><span style=\"display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);vertical-align:0\"></span> Rush</span>"+
     "<span style=\"color:var(--faint)\">Dot = your stack at the start of the hand</span></div>"+
     "<div style=\"position:relative;height:220px;margin-bottom:1rem\"><canvas id=\"td-chart\"></canvas></div>";
+  html+="<div id=\"td-hands\" style=\"margin-bottom:1rem\"></div>";
   if(kos.length) html+="<div class=\"sec-l\">Knockout hands</div>"+kos.map(function(h){return "<div class=\"hi\" onclick=\"openHand('"+h.id+"')\"><div><div class=\"hi-name\">["+h.cards+"] ("+h.normCards+")</div><div class=\"hi-meta\">"+h.pos+" &middot; "+h.stackBB+"bb &middot; "+(h.board||"preflop")+"</div></div><div class=\"hw\" style=\"font-family:monospace\">+"+h.wonBB+"bb &#128176;</div></div>";}).join("")+"<div style=\"height:.875rem\"></div>";
   if(ais.length) html+="<div class=\"sec-l\">All-in showdowns</div>"+ais.map(function(r){return aiRowHtml(r,false);}).join("");
   html+="</div>";
   el.innerHTML=html; el.style.display="block"; el.scrollIntoView({behavior:"smooth",block:"nearest"});
+  tdHs=hs; tdAiSet={}; ais.forEach(function(r){ tdAiSet[r.id]=1; }); tdF="all"; tdHandsRender();
   tdChart=destroyChart(tdChart);
   tdChart=new Chart($e("td-chart").getContext("2d"),{type:"line",
     data:{labels:hs.map(function(_,i){return i+1;}),datasets:[{data:hs.map(function(h){return h.stackBB;}),borderColor:CHC("--accent"),borderWidth:1.5,fill:false,tension:0.15,
@@ -1684,7 +1914,7 @@ function openTournament(id){
         c.restore();
       });
     }}],
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){return "Hand "+it[0].label;},label:function(it){var h=hs[it.dataIndex]; return h.stackBB+"bb · "+h.pos+" · ["+h.cards+"]"+(h.knockout?" · KO":"");}}}},
+    options:{responsive:true,maintainAspectRatio:false,onClick:function(e,els){ if(els&&els.length) openReplay(hs[els[0].index].id,hs.map(function(x){return x.id;})); },plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){return "Hand "+it[0].label+" — click to replay";},label:function(it){var h=hs[it.dataIndex]; return h.stackBB+"bb · "+h.pos+" · ["+h.cards+"]"+(h.knockout?" · KO":"");}}}},
       scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},color:CHC("--faint")},grid:{display:false}},y:{beginAtZero:true,grace:"22%",ticks:{font:{size:10},color:CHC("--faint")},grid:{color:CHC("--grid")}}}}});
 }
 
@@ -1849,7 +2079,7 @@ function showHand(id) {
   if(h.knockout) html+=pill("p-green","KNOCKOUT &#128176;");
   html+=pill(h.won?"p-green":"p-red",h.won?"+"+h.wonBB+"bb":"lost");
   var aiR=aiHandResult(h); if(aiR) html+=pill("p-amber","All-in equity "+Math.round(aiR.eq*100)+"% &middot; "+(aiR.luckBB>=0?"+":"")+aiR.luckBB.toFixed(1)+"bb vs EV");
-  html+="</div><pre style=\"background:var(--soft-2);padding:.875rem;border-radius:8px;border:0.5px solid var(--line);max-height:180px;overflow-y:auto;color:var(--muted)\">"+escH(h.raw.trim())+"</pre>";
+  html+="<button class=\"btn btn-primary\" style=\"padding:.15rem .7rem;font-size:12px\" onclick=\"openReplay('"+id+"')\">&#9654; Replay</button></div><pre style=\"background:var(--soft-2);padding:.875rem;border-radius:8px;border:0.5px solid var(--line);max-height:180px;overflow-y:auto;color:var(--muted)\">"+escH(h.raw.trim())+"</pre>";
   html+="<div id=\"oai-"+sid+"\" style=\"margin-top:.75rem\"></div>";
   $e("hh-hdi").innerHTML=html;
   sec.scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -2120,55 +2350,67 @@ function refreshResStatsCore() {
 // ============================================================
 // SECTION: RENDER — TOURNAMENT LIST
 // ============================================================
+var tlSort={k:"date",d:-1}, tlLimit=100;
+function tlReset(){ tlLimit=100; renderRL(); }
+function tlPeriodChange(){ $e("rfC").style.display=$e("rfP").value==="custom"?"inline-flex":"none"; tlReset(); }
+function tlSortBy(k){ if(tlSort.k===k) tlSort.d=-tlSort.d; else { tlSort.k=k; tlSort.d=(k==="place"||k==="id")?1:-1; } tlReset(); }
+function tlMore(){ tlLimit+=200; renderRL(); }
+function tlFmtDate(ts){ if(!ts) return "--"; var d=new Date(ts), z=function(n){return (n<10?"0":"")+n;}; return z(d.getDate())+"."+z(d.getMonth()+1)+"."+d.getFullYear()+" "+z(d.getHours())+":"+z(d.getMinutes()); }
+function tlRange(){
+  var v=$e("rfP").value, now=Date.now(), D=86400000, d=new Date(), from=0, to=Infinity;
+  if(v==="24h") from=now-D; else if(v==="7d") from=now-7*D; else if(v==="30d") from=now-30*D; else if(v==="90d") from=now-90*D;
+  else if(v==="thism") from=new Date(d.getFullYear(),d.getMonth(),1).getTime();
+  else if(v==="lastm"){ from=new Date(d.getFullYear(),d.getMonth()-1,1).getTime(); to=new Date(d.getFullYear(),d.getMonth(),1).getTime(); }
+  else if(v==="custom"){ var f=$e("rfF").value, t=$e("rfT").value; if(f) from=new Date(f+"T00:00:00").getTime(); if(t) to=new Date(t+"T23:59:59").getTime(); }
+  return {from:from,to:to};
+}
 function renderRL() {
-  var RT=filteredRT(), rf=$e("rfR").value, rs=$e("rfS").value;
-  var fil=RT.filter(function(t){
+  var RT=filteredRT(), rf=$e("rfR").value, rg=tlRange();
+  var koByTour={};
+  for(var i=0;i<HH.length;i++){ var h=HH[i]; if(!h.knockout||h.stage!=="final") continue; koByTour[h.tid]=(koByTour[h.tid]||0)+1; }
+  var hasHH=HH.length>0;
+  var rows=RT.filter(function(t){
+    if(t.date&&(t.date<rg.from||t.date>=rg.to)) return false;
+    if(!t.date&&(rg.from>0||rg.to<Infinity)) return false;
     if(rf==="itm"&&!t.itm) return false;
     if(rf==="ft"&&(t.itm||!t.madeFT)) return false;
     if(rf==="miss"&&t.madeFT) return false;
+    if(rf==="ko"&&!(koByTour[t.id]>0)) return false;
     return true;
+  }).map(function(t){ return {t:t,ko:koByTour[t.id]||0,net:t.prize-t.buyin-t.rake-t.bountyPool,cost:t.buyin+t.rake+t.bountyPool}; });
+  var key={date:function(r){return r.t.date||0;},buyin:function(r){return r.cost;},id:function(r){return +r.t.id||0;},ko:function(r){return r.ko;},place:function(r){return r.t.place||99;},
+    fixed:function(r){return r.t.fixedPrize;},bounty:function(r){return r.t.bountyEarned;},prize:function(r){return r.t.prize;},net:function(r){return r.net;}}[tlSort.k]||function(r){return r.t.date||0;};
+  rows.sort(function(a,b){ return (key(a)-key(b))*tlSort.d; });
+  var inv=0,prz=0,fx=0,bn=0,ko=0,itm=0;
+  rows.forEach(function(r){ inv+=r.cost; prz+=r.t.prize; fx+=r.t.fixedPrize; bn+=r.t.bountyEarned; ko+=r.ko; if(r.t.itm) itm++; });
+  var net=prz-inv;
+  $e("res-tcnt").textContent="("+Math.min(rows.length,tlLimit)+" / "+rows.length+")";
+  $e("res-tsum").innerHTML=
+    "<div class=\"sc\"><div class=\"sc-l\">Games</div><div class=\"sc-v c-blue\">"+rows.length+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Net</div><div class=\"sc-v "+(net>=0?"c-green":"c-red")+"\">"+(net>=0?"+":"")+net.toFixed(2)+"$</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">ROI</div><div class=\"sc-v "+(net>=0?"c-green":"c-red")+"\">"+(inv>0?Math.round(net/inv*100):0)+"%</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">ITM</div><div class=\"sc-v\">"+(rows.length?Math.round(itm/rows.length*100):0)+"%</div><div class=\"sc-s\">"+itm+" з "+rows.length+"</div></div>"+
+    "<div class=\"sc\"><div class=\"sc-l\">Knockouts</div><div class=\"sc-v\">"+(hasHH?ko:"&mdash;")+"</div>"+(hasHH?"":"<div class=\"sc-s\">немає HH</div>")+"</div>";
+  if(!rows.length){ $e("res-tl").innerHTML="<p style=\"color:var(--muted);padding:1rem 0\">Немає турнірів за вибраний період і фільтри.</p>"; $e("res-tmore").innerHTML=""; return; }
+  function th(k,label,al){ var on=tlSort.k===k; return "<th style=\"cursor:pointer;user-select:none;"+(al?"text-align:right;":"")+(on?"color:var(--accent)":"")+"\" onclick=\"tlSortBy('"+k+"')\">"+label+(on?(tlSort.d>0?" &#9650;":" &#9660;"):"")+"</th>"; }
+  var html="<table class=\"btable\" style=\"min-width:760px\"><thead><tr>"+th("date","Start time")+th("buyin","Buy-in",1)+th("id","Tournament")+th("ko","KO",1)+th("place","Place",1)+th("fixed","Fixed",1)+th("bounty","Bounty",1)+th("prize","Prize",1)+th("net","Net",1)+"</tr></thead><tbody>";
+  rows.slice(0,tlLimit).forEach(function(r){
+    var t=r.t, pc=t.itm?"p-blue":t.madeFT?"p-green":"p-gray", pl=t.place?(t.place+"°"):"bust", tag=t.itm?" TOP3":(t.madeFT?" FT":"");
+    html+="<tr style=\"cursor:pointer\" onclick=\"openTournament('"+t.id+"')\" title=\"Відкрити турнір\">"+
+      "<td style=\"font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px\">"+tlFmtDate(t.date)+"</td>"+
+      "<td style=\"text-align:right\">$"+r.cost.toFixed(2)+"</td>"+
+      "<td style=\"font-weight:600\">#"+t.id+"</td>"+
+      "<td style=\"text-align:right\">"+(hasHH?(r.ko>0?"<span style=\"color:var(--ok);font-weight:600\">"+r.ko+"</span>":"<span style=\"color:var(--faint)\">0</span>"):"<span style=\"color:var(--faint)\">&mdash;</span>")+"</td>"+
+      "<td style=\"text-align:right\">"+pill(pc,pl+tag)+"</td>"+
+      "<td style=\"text-align:right;color:"+(t.fixedPrize>0?"var(--accent)":"var(--faint)")+"\">"+(t.fixedPrize>0?"$"+t.fixedPrize.toFixed(2):"&mdash;")+"</td>"+
+      "<td style=\"text-align:right;color:"+(t.bountyEarned>0?"var(--ok)":"var(--faint)")+"\">"+(t.bountyEarned>0?"$"+t.bountyEarned.toFixed(2):"&mdash;")+"</td>"+
+      "<td style=\"text-align:right\">"+(t.prize>0?"$"+t.prize.toFixed(2):"<span style=\"color:var(--faint)\">&mdash;</span>")+"</td>"+
+      "<td style=\"text-align:right;font-weight:600\" class=\""+(r.net>=0?"hw":"hl")+"\">"+(r.net>=0?"+":"")+r.net.toFixed(2)+"$</td></tr>";
   });
-  if(rs==="place") fil.sort(function(a,b){return (a.place||99)-(b.place||99);});
-  else if(rs==="prize") fil.sort(function(a,b){return b.prize-a.prize;});
-  else fil.sort(function(a,b){return b.date-a.date;});
-
-  var koByTour={};
-  for(var i=0;i<HH.length;i++){
-    var h=HH[i];
-    if(!h.knockout||h.stage!=="final") continue;
-    if(!koByTour[h.tid]) koByTour[h.tid]=0;
-    koByTour[h.tid]++;
-  }
-
-  var show=fil.slice(0,200);
-  $e("res-tcnt").textContent="("+show.length+" / "+fil.length+")";
-  var html="";
-  for(var i=0;i<show.length;i++){
-    var t=show[i];
-    var net=t.prize-t.buyin-t.rake-t.bountyPool;
-    var ko=koByTour[t.id]||0;
-    var placeLabel=t.place?(t.place+"° "+(t.itm?"TOP3":t.madeFT?"FT":"")):"Rush bust";
-    var placeCls=t.itm?"p-blue":t.madeFT?"p-green":"p-gray";
-    var rowCls="ti"+(t.itm?" itm":t.madeFT?" ft":"");
-    var dateStr=t.date?new Date(t.date).toLocaleDateString():"--";
-    var koHtml="";
-    if(HH.length>0){
-      koHtml=ko>0
-        ?"<span style=\"font-size:11px;color:var(--ok);font-family:monospace;margin-left:6px\">&#128176;"+ko+"KO</span>"
-        :"<span style=\"font-size:11px;color:var(--faint);font-family:monospace;margin-left:6px\">0KO</span>";
-    }
-    html+="<div class=\""+rowCls+"\" style=\"cursor:pointer\" onclick=\"openTournament('"+t.id+"')\">";
-    html+="<div>";
-    html+="<div style=\"font-size:12px;font-weight:500\">#"+t.id+" "+pill(placeCls,placeLabel)+koHtml+"</div>";
-    html+="<div style=\"font-size:11px;color:var(--muted);font-family:monospace;margin-top:1px\">"+dateStr+" &middot; $"+(t.buyin+t.rake+t.bountyPool).toFixed(2)+"</div>";
-    html+="</div>";
-    html+="<div style=\"text-align:right;flex-shrink:0\">";
-    if(t.fixedPrize>0) html+="<div style=\"font-size:11px;color:var(--accent);font-family:monospace\">fixed +$"+t.fixedPrize.toFixed(2)+"</div>";
-    if(t.bountyEarned>0) html+="<div style=\"font-size:11px;color:var(--ok);font-family:monospace\">bounty +$"+t.bountyEarned.toFixed(2)+"</div>";
-    html+="<div class=\""+(net>=0?"hw":"hl")+"\" style=\"font-size:12px;font-family:monospace\">"+(net>=0?"+":"")+net.toFixed(2)+"$</div>";
-    html+="</div></div>";
-  }
+  html+="</tbody><tfoot><tr style=\"font-weight:650\"><td colspan=\"2\" style=\"padding:.6rem .7rem;border-top:1px solid var(--line-2)\">Total items: "+rows.length+"</td><td style=\"border-top:1px solid var(--line-2)\"></td><td style=\"text-align:right;border-top:1px solid var(--line-2)\">"+(hasHH?ko:"")+"</td><td style=\"border-top:1px solid var(--line-2)\"></td>"+
+    "<td style=\"text-align:right;border-top:1px solid var(--line-2)\">$"+fx.toFixed(2)+"</td><td style=\"text-align:right;border-top:1px solid var(--line-2)\">$"+bn.toFixed(2)+"</td><td style=\"text-align:right;border-top:1px solid var(--line-2)\">$"+prz.toFixed(2)+"</td><td style=\"text-align:right;border-top:1px solid var(--line-2)\" class=\""+(net>=0?"hw":"hl")+"\">"+(net>=0?"+":"")+net.toFixed(2)+"$</td></tr></tfoot></table>";
   $e("res-tl").innerHTML=html;
+  $e("res-tmore").innerHTML=rows.length>tlLimit?"<button class=\"btn\" onclick=\"tlMore()\">Show more ("+(rows.length-tlLimit)+" left)</button>":"";
 }
 
 // ============================================================
@@ -2457,5 +2699,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.11</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.12</div>
 </body></html>
