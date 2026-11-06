@@ -158,6 +158,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,.hi:focus-visible,
 @media(max-width:780px){.rp-log{max-height:220px}}
 .rp-lh{font-size:10.5px;font-weight:650;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;padding:7px 8px 2px}
 .rp-lr{font-size:12.5px;padding:4px 8px;border-radius:7px;cursor:pointer;color:var(--text-2)}.rp-lr:hover{background:var(--hover-a)}.rp-lr.on{background:var(--accent-s);color:var(--accent-d)}
+.rp-s.ko{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn-b)}.rp-kob{position:absolute;top:-8px;left:-6px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;border-radius:8px;padding:0 6px;line-height:16px}
+.rp-ko{margin-top:8px;padding:.6rem .85rem;border:1px solid var(--ok-b);background:var(--ok-s);color:var(--ok-d);border-radius:var(--r-sm);font-size:13px;line-height:1.5}.rp-ko .amt{font-size:18px;font-weight:700;color:var(--ok)}.rp-ko small{display:block;font-size:11px;opacity:.8;margin-top:2px}
 .rp-ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:.8rem}
 
 /* month chips + pagination */
@@ -1693,7 +1695,34 @@ function rpParse(h){
     var pl=seats[(hi+j2)%n2].n, th=(90+j2*360/n2)*Math.PI/180, x=50+38*Math.cos(th), y=46+37*Math.sin(th);
     P.order.push(pl); P.xy[pl]=[x,y,50+(x-50)*0.56,46+(y-46)*0.56];
   }
+  var lastS=P.steps[P.steps.length-1], heroWon=P.steps.some(function(x){return x.k==="win"&&x.w==="Hero";}), fw=-1;
+  P.steps.forEach(function(x,j){ if(fw<0&&x.k==="win") fw=j; });
+  P.winFrom=fw<0?P.steps.length-1:fw;
+  P.busted=Object.keys(init).filter(function(n){return n!=="Hero"&&init[n]>0&&lastS.st[n]<=0;});
+  P.ko=(h.knockout&&heroWon)?P.busted:[];
   RPC[h.id]=P; return P;
+}
+function rpKoN(h){ var P=rpParse(h); return Math.max(1,(P.ko||[]).length); }
+function rpKoInfo(h,P){
+  var t=null,i; for(i=0;i<allRT.length;i++) if(allRT[i].id===h.tid){ t=allRT[i]; break; }
+  var kos=HH.filter(function(x){return x.tid===h.tid&&x.knockout&&x.stage==="final";}).sort(function(a,b){return (a.date-b.date)||(parseInt(a.id.slice(2),10)-parseInt(b.id.slice(2),10));});
+  var K=0,before=0,seen=false; kos.forEach(function(x){ if(x.id===h.id){ seen=true; before=K; } K+=rpKoN(x); });
+  var n=Math.max(1,P.ko.length), names=P.ko.map(rpName).join(", ");
+  var head="&#128176; <strong>Нокаут"+(n>1?" ×"+n:"")+"</strong>"+(names?": "+escH(names):"")+(seen?" · №"+(before+1)+(n>1?"–"+(before+n):"")+" з "+K+" у турнірі":"");
+  var r={exact:0,html:""}, bt="";
+  if(!t) bt="Суму баунті не видно: додайте результати турніру (вкладка Tournament Results).";
+  else if(t.bountyEarned<=0) bt="У цьому турнірі баунті не виграно.";
+  else if(seen&&K===n){
+    r.exact=t.bountyEarned; var b1=n>1?tdBounty(t,K):null;
+    bt="Баунті за "+(n>1?"ці нокаути":"цей нокаут")+": <span class=\"amt\">+$"+t.bountyEarned.toFixed(2)+"</span>"+(b1?" <span style=\"font-weight:400\">(конверти "+b1.combos[0].map(tdFmtTier).join(" + ")+(b1.n>1?", є ще "+(b1.n-1)+" варіант(и)":"")+"; по гравцях невідомо)</span>":"")+"<small>Усі нокаути турніру в цій руці, тож сума точна.</small>";
+  }
+  else {
+    var bnt=seen?(tdBounty(t,K)||tdBounty(t,kos.length)):null;
+    bt="Баунті турніру: <span class=\"amt\">$"+t.bountyEarned.toFixed(2)+"</span> за "+(seen?K+" нокаут(и)":"нокаути")+
+      (bnt?". Конверти: <strong>"+bnt.combos[0].map(tdFmtTier).join(" + ")+"</strong>"+(bnt.n>1?" (ще "+(bnt.n-1)+" можл. варіант(и))":""):"");
+    bt+="<small>Розподіл по руках невідомий: GGPoker не пише суму баунті в Hand History, лише в підсумку турніру.</small>";
+  }
+  r.html=head+"<div style=\"margin-top:2px\">"+bt+"</div>"; return r;
 }
 function rpName(n){ return n==="Hero"?"Hero":n.slice(0,6); }
 function rpFmt(n){ var P=RPL.P; return RPL.unit==="bb"?(Math.round(n/P.bb*10)/10)+" bb":n.toLocaleString("en-US"); }
@@ -1729,7 +1758,7 @@ function rpLoad(h){
   rpStop(); RPL.h=h; RPL.id=h.id; RPL.P=rpParse(h); RPL.i=0; RPL.raw=false;
   var P=RPL.P, ov=$e("rp-ov");
   if(!P.steps.length){ ov.innerHTML="<div class=\"rp-box\"><div style=\"display:flex;justify-content:space-between\"><strong>Не вдалося розібрати роздачу</strong><button class=\"btn\" onclick=\"rpClose()\">&times;</button></div><pre style=\"margin-top:.8rem;max-height:60vh;overflow:auto\">"+escH(h.raw.trim())+"</pre></div>"; return; }
-  var ix=RPL.ids.indexOf(h.id), res=P.net, aiR=aiHandResult(h);
+  var ix=RPL.ids.indexOf(h.id), res=P.net, aiR=aiHandResult(h), koI=h.knockout?rpKoInfo(h,P):null;
   var streets=["Флоп","Тьорн","Рівер"].filter(function(s){return P.steps.some(function(x){return x.k==="board"&&x.street===s;});});
   ov.innerHTML="<div class=\"rp-box\">"+
    "<div style=\"display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:.7rem;flex-wrap:wrap\"><div>"+
@@ -1737,10 +1766,10 @@ function rpLoad(h){
      "<div style=\"font-size:12px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:2px\">Tournament #"+h.tid+" &middot; "+(h.date?tlFmtDate(h.date):"--")+" &middot; BB "+P.bb+" &middot; "+(P.seats.length)+" гравців</div></div>"+
      "<div style=\"display:flex;gap:6px;align-items:center;flex-wrap:wrap\">"+
        (aiR?pill("p-amber","All-in equity "+Math.round(aiR.eq*100)+"% &middot; "+(aiR.luckBB>=0?"+":"")+aiR.luckBB.toFixed(1)+"bb vs EV"):"")+
-       (h.knockout?pill("p-green","KNOCKOUT"):"")+
+       (h.knockout?pill("p-green","KNOCKOUT"+(P.ko.length>1?" ×"+P.ko.length:"")):"")+(koI&&koI.exact?pill("p-green","bounty +$"+koI.exact.toFixed(2)):"")+
        "<span class=\""+(res>=0?"hw":"hl")+"\" style=\"font-weight:650;font-size:15px\">Hero "+(res>=0?"+":"")+(Math.round(res*10)/10)+" bb</span>"+
        "<button class=\"btn\" onclick=\"rpClose()\" title=\"Esc\">&times; Закрити</button></div></div>"+
-   "<div class=\"rp-g\"><div><div class=\"rp-t\" id=\"rp-t\"></div><div id=\"rp-cap\" class=\"rp-cap\"></div></div><div><div id=\"rp-log\" class=\"rp-log\"></div></div></div>"+
+   "<div class=\"rp-g\"><div><div class=\"rp-t\" id=\"rp-t\"></div><div id=\"rp-cap\" class=\"rp-cap\"></div>"+(koI?"<div class=\"rp-ko\">"+koI.html+"</div>":"")+"</div><div><div id=\"rp-log\" class=\"rp-log\"></div></div></div>"+
    "<div class=\"rp-ctl\">"+
      "<button class=\"btn\" onclick=\"rpGo(0)\" title=\"На початок\">&#9198;</button><button class=\"btn\" onclick=\"rpStep(-1)\" title=\"Крок назад (←)\">&#9664;</button>"+
      "<button class=\"btn btn-primary\" id=\"rp-pl\" onclick=\"rpPlay()\" style=\"min-width:46px;justify-content:center\" title=\"Пробіл\">&#9654;</button>"+
@@ -1766,9 +1795,10 @@ function rpDraw(){
     var p=P.xy[n], fd=!!s.f[n], cards="";
     if(n==="Hero"&&hero) cards=rpCards(hero,1);
     else if(!fd) cards=s.sh[n]?rpCards(s.sh[n],1):rpCard("",1,1)+rpCard("",1,1);
-    var cls="rp-s"+(fd?" fd":"")+(s.w===n&&s.k!=="win"&&s.k!=="ret"?" act":"")+(s.k==="win"&&s.w===n?" win":"");
+    var isKo=P.ko.indexOf(n)>-1&&RPL.i>=P.winFrom;
+    var cls="rp-s"+(fd?" fd":"")+(isKo?" ko":"")+(s.w===n&&s.k!=="win"&&s.k!=="ret"?" act":"")+(s.k==="win"&&s.w===n?" win":"");
     var pos=P.pos[n]||"";
-    h+="<div class=\""+cls+"\" style=\"left:"+p[0].toFixed(1)+"%;top:"+p[1].toFixed(1)+"%\">"+(pos.indexOf("BTN")===0?"<span class=\"rp-d\">D</span>":"")+
+    h+="<div class=\""+cls+"\" style=\"left:"+p[0].toFixed(1)+"%;top:"+p[1].toFixed(1)+"%\">"+(pos.indexOf("BTN")===0?"<span class=\"rp-d\">D</span>":"")+(isKo?"<span class=\"rp-kob\">KO</span>":"")+
        "<div class=\"nm\">"+escH(rpName(n))+" <span style=\"color:var(--faint);font-weight:500;font-size:10.5px\">"+pos+"</span></div>"+
        "<div class=\"sk\">"+(s.st[n]<=0?(s.ai[n]?"олл-ін":"0"):rpFmt(s.st[n]))+"</div><div>"+cards+"</div></div>";
     if(s.b[n]>0) h+="<div class=\"rp-bet\" style=\"left:"+p[2].toFixed(1)+"%;top:"+p[3].toFixed(1)+"%\">"+rpFmt(s.b[n])+"</div>";
@@ -2699,5 +2729,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.12</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.13</div>
 </body></html>
