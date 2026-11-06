@@ -607,6 +607,14 @@ function $e(id) { return document.getElementById(id); }
 function ch(s) { return parseInt((s||"0").replace(/,/g,""))||0; }
 function $d(s) { return parseFloat((s||"0").replace(/[$,]/g,""))||0; }
 function escH(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+// How a hand ended for Hero: street (0 preflop..3 river) and outcome: fold / wnsd (won, no showdown) / wsd (won at showdown) / lsd (lost at showdown) / out (none of these)
+function hEnd(h){
+  if(h._end) return h._end;
+  var r=h.raw||"", fi=r.indexOf("*** FLOP ***"), ti=r.indexOf("*** TURN ***"), ri=r.indexOf("*** RIVER ***"), fo=r.search(/^Hero: folds/m), sd=/: shows \[| showed \[/.test(r), how, st;
+  if(fo>-1){ how="fold"; st=(ri>-1&&fo>ri)?3:(ti>-1&&fo>ti)?2:(fi>-1&&fo>fi)?1:0; }
+  else { st=ri>-1?3:ti>-1?2:fi>-1?1:0; how=h.won?(sd?"wsd":"wnsd"):(sd?"lsd":"out"); }
+  return (h._end={st:st,how:how});
+}
 function sr(l,v) { return "<div class=\"sr\"><span class=\"sr-l\">"+l+"</span><span class=\"sr-v\">"+v+"</span></div>"; }
 function pill(cls,txt) { return "<span class=\"pill "+cls+"\">"+txt+"</span>"; }
 
@@ -2164,20 +2172,37 @@ function refreshHHStats() {
     sr("<span class=\"final\">FINAL</span> VPIP/PFR",s.finalS.vpP+"%/"+s.finalS.pfP+"%")+
     sr("<span class=\"final\">FINAL</span> 3bet/F3b",s.finalS.tbP+"%/"+s.finalS.f3bP+"%")+"</div></div>";
 
-  var streetNames={river:"River +",turn:"Turn +",flop:"Flop +",preflop:"Pref +",fold_flop:"Fold flop",fold_pre:"Fold preflop"};
-  var streetColors={river:"#059669",turn:"#4F46E5",flop:"#4F46E5",preflop:"#4F46E5",fold_flop:"#B45309",fold_pre:"#DC2626"};
-  var rushStreets="";
-  ["river","turn","flop","preflop","fold_flop","fold_pre"].forEach(function(k){
-    var v=hands.filter(function(h){return h.stage==="rush"&&h.street===k;}).length;
-    var pct=s.rushS.n>0?Math.round(v/s.rushS.n*100):0;
-    rushStreets+="<div class=\"br\"><div class=\"bl\">"+streetNames[k]+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+pct+"%;background:"+streetColors[k]+"\"></div></div><div class=\"bv\">"+v+"</div><div class=\"be\">"+pct+"%</div></div>";
-  });
+  var EH=["fold","wnsd","wsd","lsd"], EN={fold:"Фолд",wnsd:"Виграв без шоудауна",wsd:"Виграв на шоудауні",lsd:"Програв на шоудауні"}, ES=["Префлоп","Флоп","Тьорн","Рівер / шоудаун"];
+  var rh=hands.filter(function(h){return h.stage==="rush";}), M=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], ends={}, nOut=0;
+  rh.forEach(function(h){ var e=hEnd(h), ix=EH.indexOf(e.how); if(ix<0){ nOut++; return; } M[e.st][ix]++; });
+  var rn=rh.length-nOut, mx=1; M.forEach(function(r){ r.forEach(function(v){ if(v>mx) mx=v; }); });
+  var sawF=M[1].concat(M[2],M[3]).reduce(function(a,b){return a+b;},0), nSD=0, wSD=0, wNS=0, rm=0;
+  for(var si2=1;si2<4;si2++){ nSD+=M[si2][2]+M[si2][3]; wSD+=M[si2][2]; wNS+=M[si2][1]; }
+  var sdAll=M[0][2]+M[0][3]; nSD+=sdAll; wSD+=M[0][2]; wNS+=M[0][1];
+  function pc(v,t){ return t>0?Math.round(v/t*100):0; }
+  var tRows="";
+  for(var ri2=0;ri2<4;ri2++){
+    var rowT=M[ri2].reduce(function(a,b){return a+b;},0);
+    tRows+="<tr><td style=\"font-weight:600;white-space:nowrap\">"+ES[ri2]+"<div style=\"font-size:10.5px;color:var(--faint);font-weight:500\">"+rowT+" ("+pc(rowT,rn)+"%)</div></td>";
+    for(var ci=0;ci<4;ci++){
+      var v=M[ri2][ci], al=v?(0.08+0.32*v/mx).toFixed(2):0, col=ci===0?"148,163,184":ci===3?"239,68,68":"16,185,129";
+      tRows+="<td style=\"text-align:center;background:"+(v?"rgba("+col+","+al+")":"transparent")+";font-variant-numeric:tabular-nums\">"+(v?"<b>"+v+"</b><div style=\"font-size:10.5px;color:var(--muted)\">"+pc(v,rn)+"%</div>":"<span style=\"color:var(--faint)\">&mdash;</span>")+"</td>";
+    }
+    tRows+="</tr>";
+  }
+  var rushStreets="<div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:430px\"><thead><tr><th>Де закінчилась</th>"+EH.map(function(k){return "<th style=\"text-align:center\">"+EN[k]+"</th>";}).join("")+"</tr></thead><tbody>"+tRows+"</tbody></table></div>"+
+    "<div style=\"font-size:11.5px;color:var(--muted);margin-top:.5rem\">% від усіх "+rn+" рук Rush. Рядок — остання вулиця, яку ви бачили (для фолду — на якій сфолдили). Олл-ін до флопа потрапляє в «Рівер / шоудаун», бо дошка добирається до кінця.</div>";
+  var endStats=sr("Бачите флоп",pc(sawF,rn)+"% <span style=\"font-size:11px;color:var(--faint)\">("+sawF+")</span>")+
+    sr("Доходите до шоудауна <span style=\"font-size:11px;color:var(--faint)\">WTSD</span>",pc(nSD,sawF)+"% <span style=\"font-size:11px;color:var(--faint)\">від бачених флопів</span>")+
+    sr("Вигруєте шоудаун <span style=\"font-size:11px;color:var(--faint)\">W$SD</span>",pc(wSD,nSD)+"% <span style=\"font-size:11px;color:var(--faint)\">("+wSD+" з "+nSD+")</span>")+
+    sr("Виграш без шоудауна",wNS+" <span style=\"font-size:11px;color:var(--faint)\">("+pc(wNS,rn)+"% рук)</span>");
   $e("hh-rush-c").innerHTML=
     "<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:1rem\">5-max fast-fold. Norm: VPIP 22-32%, PFR 18-26%, 3bet 6-10%, CBet 50-65%.</div>"+
     "<div class=\"two-col\"><div><div class=\"sec-l\">Stats</div>"+
     sr("Hands",s.rushS.n)+sr("VPIP",s.rushS.vpP+"%")+sr("PFR",s.rushS.pfP+"%")+
     sr("3bet",s.rushS.tbP+"%")+sr("Fold to 3bet",s.rushS.f3bP+"%")+sr("CBet",s.rushS.cbP+"%")+sr("Win rate",s.rushS.wr+"%")+
-    "</div><div><div class=\"sec-l\">Streets</div>"+rushStreets+"</div></div>";
+    "<div class=\"sec-l\" style=\"margin-top:.9rem\">До шоудауна</div>"+endStats+
+    "</div><div><div class=\"sec-l\">Як закінчуються роздачі</div>"+rushStreets+"</div></div>";
 
   var shortH=hands.filter(function(h){return h.stage==="final"&&h.stackBB>0&&h.stackBB<15;}).length;
   $e("hh-final-c").innerHTML=
@@ -2901,5 +2926,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.15</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.16</div>
 </body></html>
