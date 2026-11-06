@@ -256,9 +256,6 @@ details[open]>summary::before{transform:rotate(90deg)}
     <div class="sgrid" id="hh-sg"></div>
     <div class="stabs" id="hh-stabs">
       <button class="st on" onclick="hhTab(&#39;ov&#39;,this)">Overview</button>
-      <button class="st" onclick="hhTab(&#39;rush&#39;,this)">⚡ Rush</button>
-      <button class="st" onclick="hhTab(&#39;final&#39;,this)">🏆 Final</button>
-      <button class="st" onclick="hhTab(&#39;pos&#39;,this)">Position</button>
       <button class="st" onclick="hhTab(&#39;hands&#39;,this)">Hands</button>
       <button class="st" onclick="hhTab(&#39;cards&#39;,this)">Top hands</button>
       <button class="st" onclick="hhTab(&#39;weak&#39;,this)">Leaks</button>
@@ -267,9 +264,6 @@ details[open]>summary::before{transform:rotate(90deg)}
       <button class="st" onclick="hhTab(&#39;ai&#39;,this)">🧮 Аудит</button>
     </div>
     <div id="hhT-ov"><div class="card"><div class="card-hdr">Overall stats</div><div id="hh-ov-c"></div></div></div>
-    <div id="hhT-rush" style="display:none"><div class="card"><div class="card-hdr">⚡ Rush Stage</div><div id="hh-rush-c"></div></div></div>
-    <div id="hhT-final" style="display:none"><div class="card"><div class="card-hdr">🏆 Final Table</div><div id="hh-final-c"></div></div></div>
-    <div id="hhT-pos" style="display:none"><div class="card"><div class="card-hdr">Position</div><div id="hh-pos-c"></div></div></div>
     <div id="hhT-hands" style="display:none">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:6px">
@@ -607,36 +601,6 @@ function $e(id) { return document.getElementById(id); }
 function ch(s) { return parseInt((s||"0").replace(/,/g,""))||0; }
 function $d(s) { return parseFloat((s||"0").replace(/[$,]/g,""))||0; }
 function escH(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-// How a hand ended for Hero: street (0 preflop..3 river) and outcome: fold / wnsd (won, no showdown) / wsd (won at showdown) / lsd (lost at showdown) / out (none of these)
-function hEnd(h){
-  if(h._end) return h._end;
-  var r=h.raw||"", fi=r.indexOf("*** FLOP ***"), ti=r.indexOf("*** TURN ***"), ri=r.indexOf("*** RIVER ***"), fo=r.search(/^Hero: folds/m), sd=/: shows \[/.test(r.split("*** SUMMARY ***")[0]), how, st;
-  if(fo>-1){ how="fold"; st=(ri>-1&&fo>ri)?3:(ti>-1&&fo>ti)?2:(fi>-1&&fo>fi)?1:0; }
-  else { st=ri>-1?3:ti>-1?2:fi>-1?1:0; how=h.won?(sd?"wsd":"wnsd"):(sd?"lsd":"out"); }
-  return (h._end={st:st,how:how});
-}
-// Hero net result of a hand in bb (collected - invested; antes/blinds included), computed without the full replay parser.
-function hNet(h){
-  if(h._net!==undefined) return h._net;
-  var r=h.raw||"", L=r.split("\n"), tot=0, cur=0, col=0, bb=h.bb||1, m, i, ln;
-  m=r.match(/Level\d+\(([\d,]+)\/([\d,]+)/); if(m) bb=parseInt(m[2].replace(/,/g,""),10)||bb;
-  function num(x){ return parseInt(x.replace(/,/g,""),10)||0; }
-  for(i=0;i<L.length;i++){
-    ln=L[i];
-    if(ln.indexOf("*** SUMMARY")===0) break;
-    if(ln.charAt(0)==="*"){ if(/^\*\*\* (FLOP|TURN|RIVER)/.test(ln)) cur=0; continue; }
-    if(ln.indexOf("Hero: ")===0){
-      if((m=ln.match(/^Hero: posts the ante ([\d,]+)/))) tot+=num(m[1]);
-      else if((m=ln.match(/^Hero: posts (?:small blind|big blind|small & big blinds) ([\d,]+)/))){ tot+=num(m[1]); cur=num(m[1]); }
-      else if((m=ln.match(/^Hero: (?:calls|bets) ([\d,]+)/))){ tot+=num(m[1]); cur+=num(m[1]); }
-      else if((m=ln.match(/^Hero: raises [\d,]+ to ([\d,]+)/))){ tot+=num(m[1])-cur; cur=num(m[1]); }
-    } else if(ln.indexOf("Hero collected ")===0){ m=ln.match(/^Hero collected ([\d,]+)/); if(m) col+=num(m[1]); }
-    else if(ln.indexOf("Uncalled bet")===0&&/returned to Hero$/.test(ln.trim())){ m=ln.match(/\(([\d,]+)\)/); if(m) tot-=num(m[1]); }
-  }
-  return (h._net=(col-tot)/bb);
-}
-// all-in before the river => the board was run out automatically
-function hAllIn(h){ var r=h.raw||"", ri=r.indexOf("*** RIVER ***"), a=r.indexOf("and is all-in"); return a>-1&&(ri<0||a<ri); }
 function sr(l,v) { return "<div class=\"sr\"><span class=\"sr-l\">"+l+"</span><span class=\"sr-v\">"+v+"</span></div>"; }
 function pill(cls,txt) { return "<span class=\"pill "+cls+"\">"+txt+"</span>"; }
 
@@ -1788,7 +1752,7 @@ function openHandText(id){
   switchMain("hh",document.querySelectorAll(".ntab")[0]);
   if($e("HH-res").style.display==="none") doHH();
   $e("HH-up").style.display="none"; $e("HH-res").style.display="block";
-  hhTab("hands",document.querySelectorAll("#hh-stabs .st")[4]);
+  hhTab("hands",hhTabBtn("hands"));
   showHand(id);
 }
 
@@ -2194,93 +2158,6 @@ function refreshHHStats() {
     sr("<span class=\"final\">FINAL</span> VPIP/PFR",s.finalS.vpP+"%/"+s.finalS.pfP+"%")+
     sr("<span class=\"final\">FINAL</span> 3bet/F3b",s.finalS.tbP+"%/"+s.finalS.f3bP+"%")+"</div></div>";
 
-  var EH=["fold","wnsd","wsd","lsd"], EN={fold:"Фолд",wnsd:"Виграв без шоудауна",wsd:"Виграв на шоудауні",lsd:"Програв на шоудауні"}, ES=["Префлоп","Флоп","Тьорн","Рівер / шоудаун"];
-  var rh=hands.filter(function(h){return h.stage==="rush";}), M=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], ends={}, nOut=0;
-  rh.forEach(function(h){ var e=hEnd(h), ix=EH.indexOf(e.how); if(ix<0){ nOut++; return; } M[e.st][ix]++; });
-  var rn=rh.length-nOut, mx=1; M.forEach(function(r){ r.forEach(function(v){ if(v>mx) mx=v; }); });
-  var sawF=M[1].concat(M[2],M[3]).reduce(function(a,b){return a+b;},0), nSD=0, wSD=0, wNS=0, rm=0;
-  for(var si2=1;si2<4;si2++){ nSD+=M[si2][2]+M[si2][3]; wSD+=M[si2][2]; wNS+=M[si2][1]; }
-  var sdAll=M[0][2]+M[0][3]; nSD+=sdAll; wSD+=M[0][2]; wNS+=M[0][1];
-  function pc(v,t){ return t>0?Math.round(v/t*100):0; }
-  var C={}; // category -> {n, net}
-  function add(k,net){ var o=C[k]||(C[k]={n:0,net:0}); o.n++; o.net+=net; }
-  var tot=0;
-  rh.forEach(function(h){
-    var e=hEnd(h), nt=hNet(h); tot+=nt;
-    if(e.how==="fold") add("f"+e.st,nt);
-    else if(e.how==="wnsd") add("w"+e.st,nt);
-    else if(e.how==="wsd"||e.how==="lsd") add((hAllIn(h)?"a":"s")+(e.how==="wsd"?"w":"l"),nt);
-    else add("o",nt);
-  });
-  var reach=[rh.length,0,0,0]; rh.forEach(function(h){ var st=hEnd(h).st; for(var q=1;q<=st;q++) reach[q]++; });
-  function cell(k,label,hint,rch){
-    var o=C[k]||{n:0,net:0}, avg=o.n?o.net/o.n:0, cl=o.net>0.05?"hw":o.net<-0.05?"c-red":"";
-    return "<tr><td>"+label+(hint?"<div style=\"font-size:10.5px;color:var(--faint);font-weight:500\">"+hint+"</div>":"")+"</td>"+
-      "<td style=\"text-align:right\"><b>"+o.n+"</b>"+(rch?"<div style=\"font-size:10.5px;color:var(--muted)\">"+pc(o.n,rch)+"%</div>":"")+"</td>"+
-      "<td style=\"text-align:right\" class=\""+cl+"\"><b>"+(o.net>0?"+":"")+(Math.round(o.net*10)/10)+"</b></td>"+
-      "<td style=\"text-align:right\" class=\""+cl+"\">"+(o.n?(avg>0?"+":"")+(Math.round(avg*100)/100):"&mdash;")+"</td></tr>";
-  }
-  function grp(t,rch,note){ return "<tr><td colspan=\"4\" style=\"background:var(--soft-2);font-weight:650;font-size:11.5px;letter-spacing:.02em;color:var(--text-2)\">"+t+(note?" <span style=\"font-weight:500;color:var(--faint)\">"+note+"</span>":"")+"</td></tr>"; }
-  var tRows=grp("Префлоп",reach[0],"")+
-    cell("w0","Усі сфолдили на мій рейз або блайнд","я забрав банк без флопа",reach[0])+
-    cell("f0","Я сфолдив","втрата анте/блайнда",reach[0])+
-    grp("Флоп",reach[1],"бачили "+reach[1]+" рук")+
-    cell("w1","Суперник здався на мою ставку","виграв без шоудауна",reach[1])+
-    cell("f1","Я здався на ставку суперника","сфолдив на флопі",reach[1])+
-    grp("Тьорн",reach[2],"бачили "+reach[2]+" рук")+
-    cell("w2","Суперник здався на мою ставку","виграв без шоудауна",reach[2])+
-    cell("f2","Я здався на ставку суперника","сфолдив на тьорні",reach[2])+
-    grp("Рівер і шоудаун",reach[3],"бачили "+reach[3]+" рук")+
-    cell("w3","Суперник здався на мою ставку","виграв без шоудауна",reach[3])+
-    cell("f3","Я здався на ставку суперника","сфолдив на рівері",reach[3])+
-    cell("sw","Шоудаун виграв","після ставок на рівері",reach[3])+
-    cell("sl","Шоудаун програв","після ставок на рівері",reach[3])+
-    cell("aw","Олл-ін до рівера: виграв","дошка добрана автоматично",reach[3])+
-    cell("al","Олл-ін до рівера: програв","дошка добрана автоматично",reach[3])+
-    (C.o?cell("o","Інше","",0):"");
-  var rushStreets="<div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:400px\"><thead><tr><th>Ситуація</th><th style=\"text-align:right\">Рук</th><th style=\"text-align:right\">Net, bb</th><th style=\"text-align:right\">bb / рука</th></tr></thead><tbody>"+tRows+
-    "<tr style=\"font-weight:650\"><td style=\"border-top:1px solid var(--line-2)\">Разом ("+rh.length+" рук)</td><td style=\"border-top:1px solid var(--line-2)\"></td><td style=\"text-align:right;border-top:1px solid var(--line-2)\" class=\""+(tot>=0?"hw":"c-red")+"\">"+(tot>0?"+":"")+(Math.round(tot*10)/10)+"</td><td style=\"text-align:right;border-top:1px solid var(--line-2)\" class=\""+(tot>=0?"hw":"c-red")+"\">"+(rh.length?(tot>0?"+":"")+(Math.round(tot/rh.length*100)/100):"")+"</td></tr></tbody></table></div>"+
-    "<div style=\"font-size:11.5px;color:var(--muted);margin-top:.5rem;line-height:1.5\">Net — що ви виграли або втратили в bb з урахуванням анте й блайндів (кожну руку в її власних bb). % — частка від рук, що дійшли до цієї вулиці. «Я здався» — це всі ваші фолди на вулиці, не лише проти ставки.</div>";
-  var endStats=sr("Бачите флоп",pc(sawF,rn)+"% <span style=\"font-size:11px;color:var(--faint)\">("+sawF+")</span>")+
-    sr("Доходите до шоудауна <span style=\"font-size:11px;color:var(--faint)\">WTSD</span>",pc(nSD,sawF)+"% <span style=\"font-size:11px;color:var(--faint)\">від бачених флопів</span>")+
-    sr("Вигруєте шоудаун <span style=\"font-size:11px;color:var(--faint)\">W$SD</span>",pc(wSD,nSD)+"% <span style=\"font-size:11px;color:var(--faint)\">("+wSD+" з "+nSD+")</span>")+
-    sr("Виграш без шоудауна",wNS+" <span style=\"font-size:11px;color:var(--faint)\">("+pc(wNS,rn)+"% рук)</span>");
-  $e("hh-rush-c").innerHTML=
-    "<div class=\"alert a-info\" style=\"font-size:12px;margin-bottom:1rem\">5-max fast-fold. Norm: VPIP 22-32%, PFR 18-26%, 3bet 6-10%, CBet 50-65%.</div>"+
-    "<div class=\"two-col\"><div><div class=\"sec-l\">Stats</div>"+
-    sr("Hands",s.rushS.n)+sr("VPIP",s.rushS.vpP+"%")+sr("PFR",s.rushS.pfP+"%")+
-    sr("3bet",s.rushS.tbP+"%")+sr("Fold to 3bet",s.rushS.f3bP+"%")+sr("CBet",s.rushS.cbP+"%")+sr("Win rate",s.rushS.wr+"%")+
-    "<div class=\"sec-l\" style=\"margin-top:.9rem\">До шоудауна</div>"+endStats+
-    "</div><div><div class=\"sec-l\">Як закінчуються роздачі</div>"+rushStreets+"</div></div>";
-
-  var shortH=hands.filter(function(h){return h.stage==="final"&&h.stackBB>0&&h.stackBB<15;}).length;
-  $e("hh-final-c").innerHTML=
-    "<div class=\"alert a-amber\" style=\"font-size:12px;margin-bottom:1rem\">9-max Mystery Bounty. Push/fold &lt;15 BB. ICM critical.</div>"+
-    "<div class=\"two-col\"><div><div class=\"sec-l\">Stats</div>"+
-    sr("Hands",s.finalS.n)+sr("VPIP/PFR",s.finalS.vpP+"%/"+s.finalS.pfP+"%")+
-    sr("3bet/F3b",s.finalS.tbP+"%/"+s.finalS.f3bP+"%")+sr("Win rate",s.finalS.wr+"%")+
-    sr("Avg stack",s.finalS.avgStack+" BB")+sr("Hands &lt;15 BB",shortH)+
-    "</div><div><div class=\"sec-l\">Push/fold</div>"+
-    "<div style=\"font-size:13px;line-height:2.2;color:var(--muted)\">"+
-    "<div>"+pill("p-red","&lt;10 BB")+" push/fold mandatory</div>"+
-    "<div>"+pill("p-amber","10-15 BB")+" mostly push/fold</div>"+
-    "<div>"+pill("p-blue","15-25 BB")+" standard raises</div>"+
-    "<div>"+pill("p-green","&gt;25 BB")+" full postflop</div>"+
-    "</div></div></div>";
-
-  var PO=["BTN","SB","BB","CO","HJ","MP","UTG+1","UTG","?"];
-  var ph="";
-  for(var i=0;i<PO.length;i++){
-    var pp=PO[i], d=s.pos[pp]; if(!d||d.n<2) continue;
-    var wr=Math.round(d.w/d.n*100), pf=Math.round(d.pf/d.n*100);
-    var tb=d.tbOpp>0?Math.round(d.tb/d.tbOpp*100):0, f3b=d.f3bOpp>0?Math.round(d.f3b/d.f3bOpp*100):0;
-    ph+="<div style=\"margin-bottom:8px\"><div style=\"display:flex;align-items:center;gap:8px;margin-bottom:3px\">"+
-      "<div class=\"bl\">"+pp+"</div><div class=\"bt\"><div class=\"bf\" style=\"width:"+wr+"%;background:var(--accent)\"></div></div>"+
-      "<div class=\"bv\">"+wr+"%</div><div class=\"be\">"+d.n+"</div></div>"+
-      "<div style=\"font-size:11px;color:var(--muted);font-family:monospace;padding-left:128px\">PFR "+pf+"% &middot; 3bet "+tb+"% &middot; F3b "+f3b+"%</div></div>";
-  }
-  $e("hh-pos-c").innerHTML=ph||"<p style=\"color:var(--muted)\">Not enough data</p>";
-
   var allCards=Object.entries(s.cardStats).filter(function(e){return e[1].n>=2;});
   var topWin=allCards.filter(function(e){return e[1].netBB>0;}).sort(function(a,b){return b[1].netBB-a[1].netBB;}).slice(0,15);
   var topLoss=allCards.filter(function(e){return e[1].netBB<0;}).sort(function(a,b){return a[1].netBB-b[1].netBB;}).slice(0,15);
@@ -2380,7 +2257,7 @@ async function analyzeHand(id) {
 }
 
 async function hhAsk(q) {
-  hhTab("ai",document.querySelectorAll("#hh-stabs .st")[7]);
+  hhTab("ai",hhTabBtn("ai"));
   var el=$e("hh-ai-r"); el.innerHTML="<span class=\"spinner\"></span>Analyzing...";
   var hands=filteredHH(); var s=calcHH(hands);
   var sys="You are MBR $1 GGPoker trainer. RUSH: 5-max, VPIP 22-32%, PFR 18-26%, 3bet 6-10%, CBet 50-65%. FINAL: 9-max Bounty, TOP3 $4/$3/$2, push/fold <15bb.";
@@ -2718,9 +2595,10 @@ function resAskCustom() { var q=$e("res-q").value.trim(); if(q){resAsk(q); $e("r
 // ============================================================
 // SECTION: UI HELPERS
 // ============================================================
+function hhTabBtn(n){ return [].filter.call(document.querySelectorAll("#hh-stabs .st"),function(b){return (b.getAttribute("onclick")||"").indexOf("'"+n+"'")>-1;})[0]||null; }
 function hhTab(n,b) {
   document.querySelectorAll("#hh-stabs .st").forEach(function(t){t.classList.remove("on");});
-  ["ov","rush","final","pos","hands","cards","weak","ranges","allin","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
+  ["ov","hands","cards","weak","ranges","allin","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
   if(b) b.classList.add("on");
   var el=$e("hhT-"+n); if(el) el.style.display="block";
   if(n==="ranges") renderRangesTab();
@@ -2975,5 +2853,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.18</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.19</div>
 </body></html>
