@@ -610,7 +610,7 @@ function escH(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/
 // How a hand ended for Hero: street (0 preflop..3 river) and outcome: fold / wnsd (won, no showdown) / wsd (won at showdown) / lsd (lost at showdown) / out (none of these)
 function hEnd(h){
   if(h._end) return h._end;
-  var r=h.raw||"", fi=r.indexOf("*** FLOP ***"), ti=r.indexOf("*** TURN ***"), ri=r.indexOf("*** RIVER ***"), fo=r.search(/^Hero: folds/m), sd=/: shows \[| showed \[/.test(r), how, st;
+  var r=h.raw||"", fi=r.indexOf("*** FLOP ***"), ti=r.indexOf("*** TURN ***"), ri=r.indexOf("*** RIVER ***"), fo=r.search(/^Hero: folds/m), sd=/: shows \[/.test(r.split("*** SUMMARY ***")[0]), how, st;
   if(fo>-1){ how="fold"; st=(ri>-1&&fo>ri)?3:(ti>-1&&fo>ti)?2:(fi>-1&&fo>fi)?1:0; }
   else { st=ri>-1?3:ti>-1?2:fi>-1?1:0; how=h.won?(sd?"wsd":"wnsd"):(sd?"lsd":"out"); }
   return (h._end={st:st,how:how});
@@ -2191,7 +2191,7 @@ function refreshHHStats() {
     tRows+="</tr>";
   }
   var rushStreets="<div style=\"overflow-x:auto\"><table class=\"btable\" style=\"min-width:430px\"><thead><tr><th>Де закінчилась</th>"+EH.map(function(k){return "<th style=\"text-align:center\">"+EN[k]+"</th>";}).join("")+"</tr></thead><tbody>"+tRows+"</tbody></table></div>"+
-    "<div style=\"font-size:11.5px;color:var(--muted);margin-top:.5rem\">% від усіх "+rn+" рук Rush. Рядок — остання вулиця, яку ви бачили (для фолду — на якій сфолдили). Олл-ін до флопа потрапляє в «Рівер / шоудаун», бо дошка добирається до кінця.</div>";
+    "<div style=\"font-size:11.5px;color:var(--muted);margin-top:.5rem\">% від усіх "+rn+" рук Rush. Рядок — остання вулиця, яку ви бачили (для фолду — на якій сфолдили). Шоудаун буває лише після рівера (при олл-іні дошка добирається автоматично), тому виграші й програші шоудауна завжди в останньому рядку; раніше роздача закінчується тільки фолдом або виграшем без шоудауна. Олл-ін до флопа теж потрапляє в «Рівер / шоудаун».</div>";
   var endStats=sr("Бачите флоп",pc(sawF,rn)+"% <span style=\"font-size:11px;color:var(--faint)\">("+sawF+")</span>")+
     sr("Доходите до шоудауна <span style=\"font-size:11px;color:var(--faint)\">WTSD</span>",pc(nSD,sawF)+"% <span style=\"font-size:11px;color:var(--faint)\">від бачених флопів</span>")+
     sr("Вигруєте шоудаун <span style=\"font-size:11px;color:var(--faint)\">W$SD</span>",pc(wSD,nSD)+"% <span style=\"font-size:11px;color:var(--faint)\">("+wSD+" з "+nSD+")</span>")+
@@ -2926,5 +2926,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.16</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.17</div>
 </body></html>
