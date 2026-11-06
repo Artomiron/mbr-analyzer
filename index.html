@@ -205,6 +205,7 @@ details[open]>summary::before{transform:rotate(90deg)}
   <div class="nav">
     <button class="ntab" onclick="switchMain(&#39;hh&#39;,this)">Hand History</button>
     <button class="ntab on" onclick="switchMain(&#39;res&#39;,this)">Tournament Results</button>
+    <button class="ntab" onclick="switchMain(&#39;tr&#39;,this)">Тренажер</button>
   </div>
   <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Перемкнути тему" title="Темна тема">☾</button>
 </div>
@@ -258,10 +259,6 @@ details[open]>summary::before{transform:rotate(90deg)}
       <button class="st on" onclick="hhTab(&#39;ov&#39;,this)">Overview</button>
       <button class="st" onclick="hhTab(&#39;hands&#39;,this)">Hands</button>
       <button class="st" onclick="hhTab(&#39;cards&#39;,this)">Top hands</button>
-      <button class="st" onclick="hhTab(&#39;weak&#39;,this)">Leaks</button>
-      <button class="st" onclick="hhTab(&#39;ranges&#39;,this)">📊 Ranges</button>
-      <button class="st" onclick="hhTab(&#39;allin&#39;,this)">🎲 All-in EV</button>
-      <button class="st" onclick="hhTab(&#39;ai&#39;,this)">🧮 Аудит</button>
     </div>
     <div id="hhT-ov"><div class="card"><div class="card-hdr">Overall stats</div><div id="hh-ov-c"></div></div></div>
     <div id="hhT-hands" style="display:none">
@@ -280,27 +277,6 @@ details[open]>summary::before{transform:rotate(90deg)}
       <div class="card" id="hh-hd" style="display:none"><div class="card-hdr">Hand detail</div><div id="hh-hdi"></div></div>
     </div>
     <div id="hhT-cards" style="display:none"><div class="card"><div class="card-hdr">🃏 Top hands</div><div id="hh-cards-c"></div></div></div>
-    <div id="hhT-weak" style="display:none"><div class="card"><div class="card-hdr">⚠️ Leaks</div><div id="hh-weak-c"></div></div></div>
-    <div id="hhT-ranges" style="display:none">
-      <div class="card">
-        <div class="card-hdr">📊 Префлоп-діапазони</div>
-        <div id="rg-body"></div>
-      </div>
-    </div>
-    <div id="hhT-allin" style="display:none">
-      <div class="card">
-        <div class="card-hdr">🎲 All-in EV (справжня еквіті з шоудаунів)</div>
-        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Беруться роздачі, де hero і один суперник відкрили карти в олл-іні до завершення роздачі. Еквіті рахується точно (флоп і тьорн) або симуляцією 2500 розкладів (префлоп, результат стабільний). Luck = фактично отримано &minus; еквіті &times; банк, у bb. Мультивей і побічні банки пропускаються.</div>
-        <button class="btn btn-primary" onclick="runAllin()">▶ Порахувати вибрані місяці</button><span id="ai-prog" style="font-size:12px;color:var(--muted);margin-left:8px"></span>
-        <div id="ai-res" style="margin-top:.875rem"></div>
-      </div>
-    </div>
-    <div id="hhT-ai" style="display:none">
-      <div class="card">
-        <div class="card-hdr">🧮 Аудит префлопа</div>
-        <div id="af-body"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -399,6 +375,35 @@ details[open]>summary::before{transform:rotate(90deg)}
       </div>
     </div>
   </div>
+</div>
+<div id="M-tr" style="display: none;">
+  <div style="margin-bottom:1rem"><div style="font-size:19px;font-weight:650;letter-spacing:-.015em">Тренажер</div>
+    <div id="tr-note" style="font-size:12.5px;color:var(--muted);margin-top:3px"></div></div>
+  <div class="stabs" id="tr-stabs">
+    <button class="st on" onclick="trTab(&#39;ranges&#39;,this)">📊 Ranges</button>
+    <button class="st" onclick="trTab(&#39;allin&#39;,this)">🎲 All-in EV</button>
+    <button class="st" onclick="trTab(&#39;ai&#39;,this)">🧮 Аудит</button>
+  </div>
+    <div id="hhT-ranges">
+      <div class="card">
+        <div class="card-hdr">📊 Префлоп-діапазони</div>
+        <div id="rg-body"></div>
+      </div>
+    </div>
+    <div id="hhT-allin" style="display:none">
+      <div class="card">
+        <div class="card-hdr">🎲 All-in EV (справжня еквіті з шоудаунів)</div>
+        <div class="alert a-info" style="font-size:12px;margin-bottom:.875rem">Беруться роздачі, де hero і один суперник відкрили карти в олл-іні до завершення роздачі. Еквіті рахується точно (флоп і тьорн) або симуляцією 2500 розкладів (префлоп, результат стабільний). Luck = фактично отримано &minus; еквіті &times; банк, у bb. Мультивей і побічні банки пропускаються.</div>
+        <button class="btn btn-primary" onclick="runAllin()">▶ Порахувати вибрані місяці</button><span id="ai-prog" style="font-size:12px;color:var(--muted);margin-left:8px"></span>
+        <div id="ai-res" style="margin-top:.875rem"></div>
+      </div>
+    </div>
+    <div id="hhT-ai" style="display:none">
+      <div class="card">
+        <div class="card-hdr">🧮 Аудит префлопа</div>
+        <div id="af-body"></div>
+      </div>
+    </div>
 </div>
 </div>
 <script src="lib/jszip.min.js"></script>
@@ -660,7 +665,9 @@ function switchMain(n,b) {
   b.classList.add("on");
   $e("M-hh").style.display=n==="hh"?"block":"none";
   $e("M-res").style.display=n==="res"?"block":"none";
+  $e("M-tr").style.display=n==="tr"?"block":"none";
   if(n==="res") updateStoredNotice();
+  if(n==="tr"){ trPeriodNote(); trTab(TR.cur,trTabBtn(TR.cur)); }
 }
 function showAddMoreHH() { hhAppend=true; $e("HH-up").style.display="block"; $e("HH-res").style.display="none"; $e("hh-cnt").textContent=HH.length+" hands loaded"; $e("hh-go").disabled=false; }
 function showAddMore() { $e("R-up").style.display="block"; $e("R-res").style.display="none"; }
@@ -1190,20 +1197,7 @@ function calcHH(hands) {
     cardStats[c].n++; if(h.won){cardStats[c].w++; cardStats[c].netBB+=h.wonBB;}
     else cardStats[c].netBB-=(h.potBB>0?h.potBB*0.12:2);
   }
-  return {n:n, all:all, rushS:rushS, finalS:finalS, pos:pos, st:st, cardStats:cardStats, weaknesses:calcWeaknesses(all,rushS,st,n)};
-}
-
-function calcWeaknesses(all,rushS,st,n) {
-  var w=[];
-  if(st.fold_pre>0&&n>0&&(st.fold_pre/n)>0.55) w.push({sev:"high",txt:"Very high fold frequency - "+Math.round(st.fold_pre/n*100)+"%"});
-  if(rushS.vpP<18) w.push({sev:"high",txt:"Rush VPIP "+rushS.vpP+"% - too tight for 5-max"});
-  if(rushS.vpP>42) w.push({sev:"high",txt:"Rush VPIP "+rushS.vpP+"% - too loose"});
-  if(all.pfP<12) w.push({sev:"high",txt:"PFR "+all.pfP+"% - too passive"});
-  if(all.cbP>0&&all.cbP<35) w.push({sev:"med",txt:"CBet "+all.cbP+"% - too low"});
-  if(all.f3bP>60) w.push({sev:"med",txt:"Fold to 3bet "+all.f3bP+"% - too often"});
-  if(all.tbP<5&&all.n>30) w.push({sev:"med",txt:"3bet "+all.tbP+"% - very low"});
-  if(!w.length) w.push({sev:"ok",txt:"No critical leaks found"});
-  return w;
+  return {n:n, all:all, rushS:rushS, finalS:finalS, pos:pos, st:st, cardStats:cardStats};
 }
 
 // ============================================================
@@ -2165,12 +2159,8 @@ function refreshHHStats() {
   var lHtml=topLoss.map(function(e){return sr("<span style=\"font-family:monospace;font-weight:500\">"+e[0]+"</span>","<span class=\"c-red\">"+e[1].netBB.toFixed(1)+"bb</span> <span style=\"font-size:11px;color:var(--faint)\">"+e[1].n+"x WR"+Math.round(e[1].w/e[1].n*100)+"%</span>");}).join("");
   $e("hh-cards-c").innerHTML="<div class=\"two-col\"><div><div class=\"sec-l\" style=\"color:var(--ok)\">Top profitable</div>"+(wHtml||"<p style=\"color:var(--muted)\">Not enough</p>")+"</div><div><div class=\"sec-l\" style=\"color:var(--bad)\">Top losing</div>"+(lHtml||"<p style=\"color:var(--muted)\">Not enough</p>")+"</div></div>";
 
-  var sevBg={high:"a-err",med:"a-amber",ok:"a-ok"};
-  var sevPill={high:"p-red",med:"p-amber",ok:"p-green"};
-  var sevLabel={high:"Critical",med:"Important",ok:"Good"};
-  var wkHtml=s.weaknesses.map(function(w){return "<div class=\"alert "+sevBg[w.sev]+"\" style=\"margin-bottom:.5rem;display:flex;gap:8px;align-items:flex-start\"><span class=\"pill "+sevPill[w.sev]+"\" style=\"flex-shrink:0;margin-top:1px\">"+sevLabel[w.sev]+"</span><span>"+w.txt+"</span></div>";}).join("");
-  $e("hh-weak-c").innerHTML=wkHtml;
 
+  var PO=["BTN","SB","BB","CO","HJ","MP","UTG+1","UTG","?"];
   var pfEl=$e("fP"); pfEl.innerHTML="<option value=\"all\">All positions</option>";
   for(var i=0;i<PO.length;i++){if(s.pos[PO[i]]&&s.pos[PO[i]].n>1){var o=document.createElement("option"); o.value=PO[i]; o.textContent=PO[i]; pfEl.appendChild(o);}}
   hhPage=1; renderHL(1);
@@ -2598,11 +2588,29 @@ function resAskCustom() { var q=$e("res-q").value.trim(); if(q){resAsk(q); $e("r
 function hhTabBtn(n){ return [].filter.call(document.querySelectorAll("#hh-stabs .st"),function(b){return (b.getAttribute("onclick")||"").indexOf("'"+n+"'")>-1;})[0]||null; }
 function hhTab(n,b) {
   document.querySelectorAll("#hh-stabs .st").forEach(function(t){t.classList.remove("on");});
-  ["ov","hands","cards","weak","ranges","allin","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
+  ["ov","hands","cards"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
+  if(b) b.classList.add("on");
+  var el=$e("hhT-"+n); if(el) el.style.display="block";
+}
+// ---- Trainer (main tab): ranges viewer, all-in EV, preflop audit ----
+var TR={cur:"ranges"};
+function trTabBtn(n){ return [].filter.call(document.querySelectorAll("#tr-stabs .st"),function(b){return (b.getAttribute("onclick")||"").indexOf("'"+n+"'")>-1;})[0]||null; }
+function trTab(n,b){
+  TR.cur=n;
+  document.querySelectorAll("#tr-stabs .st").forEach(function(t){t.classList.remove("on");});
+  ["ranges","allin","ai"].forEach(function(x){var el=$e("hhT-"+x);if(el)el.style.display="none";});
   if(b) b.classList.add("on");
   var el=$e("hhT-"+n); if(el) el.style.display="block";
   if(n==="ranges") renderRangesTab();
   if(n==="ai") renderAuditTab();
+}
+function trPeriodNote(){
+  var el=$e("tr-note"); if(!el) return;
+  if(!HH.length){ el.innerHTML="Hand History ще не завантажено: All-in EV й Аудит рахуються з ваших роздач. Ranges працює й без них."; return; }
+  var all={}, on={}; HH.forEach(function(h){ var k=getMonthKey(h.date); all[k]=1; if(allHHMonths[k]!==false) on[k]=1; });
+  var ks=Object.keys(on).sort(), n=filteredHH().length;
+  var lab=!ks.length?"нічого не вибрано":ks.length<=3?ks.map(monthLabel).join(", "):monthLabel(ks[0])+" – "+monthLabel(ks[ks.length-1])+" ("+ks.length+" міс.)";
+  el.innerHTML="Період: <b style=\"color:var(--text-2)\">"+lab+"</b> &middot; "+n.toLocaleString("en-US")+" рук"+(ks.length<Object.keys(all).length?" (вибрано з "+Object.keys(all).length+" міс.)":"")+" &middot; <a href=\"#\" onclick=\"switchMain('hh',document.querySelectorAll('.ntab')[0]);return false\" style=\"color:var(--accent);font-weight:600;text-decoration:none\">змінити у Hand History</a>";
 }
 function resTab(n,b) {
   document.querySelectorAll("#res-stabs .st").forEach(function(t){t.classList.remove("on");});
@@ -2853,5 +2861,5 @@ function fmt(t) {
 </script>
 
 
-<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.19</div>
+<div id="app-ver" title="Версія збірки" style="position:fixed;right:10px;bottom:6px;font-size:11px;font-family:monospace;color:var(--faint);pointer-events:none;z-index:5">v1.21</div>
 </body></html>
